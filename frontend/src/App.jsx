@@ -16,7 +16,7 @@ function App()
 
       {/* Foreground content */}
       <div className="relative z-10 flex flex-col items-center">
-        <h2 className="text-black text-4xl">
+        <h2 className="almost-black text-4xl">
           Welcome to
         </h2>
 
@@ -41,11 +41,11 @@ function App()
         <img
           src={heart}
           alt="Heart"
-          className="absolute bottom-[44px] -right-16 w-24 h-24 animate-tilt-snap-2"
+          className="absolute bottom-[44px] -right-25 w-24 h-24 animate-tilt-snap-2"
         />
 
-        <h1 className="text-black text-4xl mb-6">
-          Make Drawing Simple.
+        <h1 className="almost-black tracking-widest text-4xl mb-6">
+          Make drawing <a className='tracking-[6px]'>simple</a>.
         </h1>
 
         <img
