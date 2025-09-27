@@ -1,6 +1,7 @@
 import mountains from './assets/mountains.svg'
 import potaraLogo from './assets/potara-logo.png'
 import star from './assets/star.png'
+import swirl from './assets/swirl.png'
 
 function App() {
   return (
@@ -16,6 +17,12 @@ function App() {
           src={star}
           alt="Star"
           className="absolute -top-18 -left-16 w-38 h-38"
+        />
+
+        <img
+          src={swirl}
+          alt="Swirl"
+          className="absolute top-[30px] -left-28 w-24 h-24"
         />
 
         <img
