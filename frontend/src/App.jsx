@@ -11,7 +11,7 @@ function App() {
         <img
           src={potaraLogo}
           alt="Potara Logo"
-          className="w-24 mb-2"
+          className="w-74 mb-2"
         />
 
         <h1 className="text-black text-2xl font-unkempt mb-6">
