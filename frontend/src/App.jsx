@@ -2,8 +2,10 @@ import mountains from './assets/mountains.svg'
 import potaraLogo from './assets/potara-logo.png'
 import star from './assets/star.png'
 import swirl from './assets/swirl.png'
+import heart from './assets/heart.png'
 
-function App() {
+function App() 
+{
   return (
     <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
 
@@ -16,19 +18,25 @@ function App() {
         <img
           src={star}
           alt="Star"
-          className="absolute -top-18 -left-16 w-38 h-38"
+          className="absolute -top-18 -left-16 w-38 h-38 animate-tilt-snap-2"
         />
 
         <img
           src={swirl}
           alt="Swirl"
-          className="absolute top-[30px] -left-28 w-24 h-24"
+          className="absolute top-[30px] -left-26 w-24 h-24 animate-tilt-snap-2"
         />
 
         <img
           src={potaraLogo}
           alt="Potara Logo"
           className="w-96"
+        />
+
+        <img
+          src={heart}
+          alt="Heart"
+          className="absolute bottom-[44px] -right-16 w-24 h-24 animate-tilt-snap-2"
         />
 
         <h1 className="text-black text-4xl mb-6">

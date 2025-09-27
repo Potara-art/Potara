@@ -34,6 +34,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+@import "tailwindcss";
+
+/* Jump between 0deg and -10deg with no tweening */
+@keyframes tilt-snap-2 {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-10deg); }
+}
+
+@theme {
+  /* 150ms is very fast. Tweak as needed (e.g., 100ms, 200ms). */
+  --animate-tilt-snap-2: tilt-snap-2 290ms steps(2, jump-none) infinite alternate;
+}
+
 /* a {
   font-weight: 500;
   color: #646cff;
