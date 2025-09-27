@@ -1,19 +1,62 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Unkempt';
+  src: url('./assets/unkempt-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Kavivanar';
+  src: url('./assets/kavivanar-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+.almost-black {
+  color: #424C51;
+}
+
+.awesome-blue {
+  color: #749DA1;
+}
+
+@theme {
+  --font-unkempt: 'Unkempt', system-ui, sans-serif;
+  --font-kavivanar: 'Kavivanar', system-ui, sans-serif;
+  --color-sillyyellow: #F7E7B3;
+  --color-almostblack: #424C51;
+  --color-beige: #E0CFAC;
+}
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Kavivanar', system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #E0CFAC;
 
-  font-synthesis: none;
+  /* font-synthesis: none; */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
+/* Jump between 0deg and -10deg with no tweening */
+@keyframes tilt-snap-2 {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-10deg); }
+}
+
+@theme {
+  /* 150ms is very fast. Tweak as needed (e.g., 100ms, 200ms). */
+  --animate-tilt-snap-2: tilt-snap-2 290ms steps(2, jump-none) infinite alternate;
+}
+
+/* a {
   font-weight: 500;
   color: #646cff;
   text-decoration: inherit;
@@ -65,4 +108,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */

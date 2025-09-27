@@ -1,34 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useNavigate } from 'react-router-dom'
 
-function App() {
-  const [count, setCount] = useState(0)
+import mountains from './assets/mountains.svg'
+import potaraLogo from './assets/potara-logo.png'
+import star from './assets/star.png'
+import swirl from './assets/swirl.png'
+import heart from './assets/heart.png'
+import squiggle from './assets/Squiggle.svg'
+
+function App() 
+{
+  const navigate = useNavigate()
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
+
+      {/* Foreground content */}
+      <div className="relative z-10 flex flex-col items-center">
+        <h2 className="text-black text-4xl">
+          Welcome to
+        </h2>
+
+        <img
+          src={star}
+          alt="Star"
+          className="absolute -top-18 -left-16 w-38 h-38 animate-tilt-snap-2"
+        />
+
+        <img
+          src={swirl}
+          alt="Swirl"
+          className="absolute top-[30px] -left-26 w-24 h-24 animate-tilt-snap-2"
+        />
+
+        <img
+          src={potaraLogo}
+          alt="Potara Logo"
+          className="w-96"
+        />
+
+        <img
+          src={heart}
+          alt="Heart"
+          className="absolute bottom-[44px] -right-16 w-24 h-24 animate-tilt-snap-2"
+        />
+
+        <h1 className="text-black text-4xl mb-6">
+          Make Drawing Simple.
+        </h1>
+
+        <img
+          src={squiggle}
+          alt="Squiggle"
+          className="absolute bottom-[44px] -right-[-36px] w-24 h-26"
+        />
+
+        <button
+          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt"
+          onClick={() => navigate('/start')}
+        >
+          Get Started
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      {/* Background mountains */}
+      <img
+        src={mountains}
+        alt="Mountains"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] z-0"
+      />
+    </div>
   )
 }
 
