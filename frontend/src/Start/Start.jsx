@@ -8,7 +8,6 @@ import squiggle from '../assets/Squiggle.svg'
 import pictureGuy from '../assets/lookingAtPhoto.png'
 import bird1 from '../assets/bird1.png'
 import bird2 from '../assets/bird2.png'
-// import testBg from '../assets/testBg.svg'
 import star from '../assets/star.png'
 import heart from '../assets/heart.png'
 
