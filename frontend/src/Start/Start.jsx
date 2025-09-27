@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import Header from '../components/header'
+import Footer from '../components/Footer'
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
 import squiggle from '../assets/Squiggle.svg'
 import pictureGuy from '../assets/lookingAtPhoto.png'
 import bird1 from '../assets/bird1.png'
 import bird2 from '../assets/bird2.png'
+import testBg from '../assets/testBg.svg'
 
 function Start() {
 
@@ -33,7 +35,7 @@ function Start() {
                     <img className="max-w-1/4 place-self-center" src={pictureGuy} />
                 </div>
                 <div className="bg-white h-[400px] w-2/3 rounded-4xl p-8 text-center justify-center items-center" >
-                    <h1 className="almost-black font-unkempt text-4xl mb-5">2. Potara will trace over the <a className="awesome-blue">basic shapes</a> </h1>
+                    <h1 className="almost-black font-unkempt text-4xl mb-5">2. Potara's AI will trace over the <a className="awesome-blue">basic shapes</a> </h1>
                     <img className="max-w-1/4 place-self-center" src={bird1} />
                 </div>
                 <div className="bg-white h-[400px] w-2/3 rounded-4xl p-8 text-center justify-center items-center" >
@@ -41,6 +43,7 @@ function Start() {
                     <img className="max-w-1/4 place-self-center" src={bird2} />
                 </div>
             </div>
+            <Footer></Footer>
         </>
     )
 }

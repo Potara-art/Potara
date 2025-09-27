@@ -25,7 +25,9 @@
 @theme {
   --font-unkempt: 'Unkempt', system-ui, sans-serif;
   --font-kavivanar: 'Kavivanar', system-ui, sans-serif;
-  --color-sillyyellow: #F7E7B3
+  --color-sillyyellow: #F7E7B3;
+  --color-almostblack: #424C51;
+  --color-beige: #E0CFAC;
 }
 
 :root {
