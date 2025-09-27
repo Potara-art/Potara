@@ -1,5 +1,6 @@
 import mountains from './assets/mountains.svg'
 import potaraLogo from './assets/potara-logo.png'
+import star from './assets/star.png'
 
 function App() {
   return (
@@ -7,17 +8,23 @@ function App() {
 
       {/* Foreground content */}
       <div className="relative z-10 flex flex-col items-center">
-        <h2 className="text-black text-3xl mb-2">
+        <h2 className="text-black text-4xl">
           Welcome to
         </h2>
 
         <img
-          src={potaraLogo}
-          alt="Potara Logo"
-          className="w-103 mb-2"
+          src={star}
+          alt="Star"
+          className="absolute -top-18 -left-16 w-38 h-38"
         />
 
-        <h1 className="text-black text-3xl mb-6">
+        <img
+          src={potaraLogo}
+          alt="Potara Logo"
+          className="w-96"
+        />
+
+        <h1 className="text-black text-4xl mb-6">
           Make Drawing Simple.
         </h1>
 
