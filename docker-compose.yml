@@ -1,0 +1,40 @@
+services:
+  postgres_db:
+    image: postgres:17
+    container_name: postgres_db
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres_db
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=1234
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "postgres_db", "-U", "admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - 8000:8000
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    stdin_open: true
+    tty: true
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - 5173:5173
+
+volumes:
+    postgres_db:
