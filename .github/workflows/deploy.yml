@@ -1,0 +1,27 @@
+# .github/workflows/deploy.yml
+
+name: Deploy to VPS
+
+# This action will trigger on every push to the 'main' branch
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest # Use a standard Linux runner
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to VPS
+      # This is a popular and trusted action for SSH deployments
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        script: |
+          cd /var/www/Potara
+          ./deploy.sh

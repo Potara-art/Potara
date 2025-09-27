@@ -9,6 +9,7 @@ export default defineConfig({
       usePolling: true
     },
     host: true,
+    allowedHosts: ["potara.art"],
     strictPort: true,
     port: 5173
   }
