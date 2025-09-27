@@ -1,7 +1,7 @@
 // import { useNavigate } from 'react-router-dom'
 import testBg from '../assets/testBg.svg'
 
-function Auth() 
+function LogIn() 
 {
   return (
     <>
@@ -81,4 +81,4 @@ function Auth()
   )
 }
 
-export default Auth
+export default LogIn
