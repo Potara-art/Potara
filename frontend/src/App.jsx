@@ -3,7 +3,7 @@ import potaraLogo from './assets/potara-logo.png'
 
 function App() {
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-37">
+    <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
 
       {/* Foreground content */}
       <div className="relative z-10 flex flex-col items-center">
@@ -17,11 +17,11 @@ function App() {
           className="w-103 mb-2"
         />
 
-        <h1 className="text-black text-3xl font-unkempt mb-6">
+        <h1 className="text-black text-3xl mb-6">
           Make Drawing Simple.
         </h1>
 
-        <button className="px-10 py-6 bg-white text-black text-3xl font-semibold rounded-3xl shadow-md hover:bg-gray-200 transition">
+        <button className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt">
           Get Started
         </button>
       </div>
