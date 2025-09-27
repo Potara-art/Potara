@@ -18,7 +18,7 @@ function Auth()
           <form className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm almost-black mb-1">
-                Name
+                Username
               </label>
               <input
                 id="username"
