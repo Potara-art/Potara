@@ -16,7 +16,7 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  auth0_id  Int      @unique
+  auth0_id  String   @unique
   email     String   @unique
   name      String?
   references Reference[]
