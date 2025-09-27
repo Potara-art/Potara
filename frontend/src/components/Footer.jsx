@@ -1,4 +1,4 @@
-import logo from '../assets/potaraLogo.png'
+import logo from '../assets/potara-logo.png'
 
 function Footer () {
     return (
