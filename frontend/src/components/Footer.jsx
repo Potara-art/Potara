@@ -1,0 +1,15 @@
+import logo from '../assets/potaraLogo.png'
+
+function Footer () {
+    return (
+        <div className="font-unkempt text-beige text-2xl bg-almostblack w-full h-25 flex flex-row place-content-evenly gap-50 place-content-center items-center">
+            <p>Made with &lt;3</p>
+            <a href="/">
+                <img className="max-w-30 h-auto" src={logo} />
+            </a>
+            <p>© 2025 Potara</p>
+        </div>
+    )
+}
+
+export default Footer

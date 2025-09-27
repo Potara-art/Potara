@@ -14,9 +14,20 @@
   font-style: normal;
 }
 
+.almost-black {
+  color: #424C51;
+}
+
+.awesome-blue {
+  color: #749DA1;
+}
+
 @theme {
   --font-unkempt: 'Unkempt', system-ui, sans-serif;
-  --font-roboto: 'Kavivanar', system-ui, sans-serif;
+  --font-kavivanar: 'Kavivanar', system-ui, sans-serif;
+  --color-sillyyellow: #F7E7B3;
+  --color-almostblack: #424C51;
+  --color-beige: #E0CFAC;
 }
 
 :root {
@@ -33,8 +44,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
-@import "tailwindcss";
 
 /* Jump between 0deg and -10deg with no tweening */
 @keyframes tilt-snap-2 {

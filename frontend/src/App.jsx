@@ -1,11 +1,16 @@
+import { useNavigate } from 'react-router-dom'
+
 import mountains from './assets/mountains.svg'
 import potaraLogo from './assets/potara-logo.png'
 import star from './assets/star.png'
 import swirl from './assets/swirl.png'
 import heart from './assets/heart.png'
+import squiggle from './assets/Squiggle.svg'
 
 function App() 
 {
+  const navigate = useNavigate()
+
   return (
     <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
 
@@ -43,9 +48,19 @@ function App()
           Make Drawing Simple.
         </h1>
 
-        <button className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt">
+        <img
+          src={squiggle}
+          alt="Squiggle"
+          className="absolute bottom-[44px] -right-[-36px] w-24 h-26"
+        />
+
+        <button
+          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt"
+          onClick={() => navigate('/start')}
+        >
           Get Started
         </button>
+
       </div>
 
       {/* Background mountains */}
