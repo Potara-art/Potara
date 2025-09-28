@@ -5,6 +5,7 @@ import Canvas from './canvas.jsx'
 import Shelly from '../components/Shelly.jsx'
 import { useAuth } from '../contexts/AuthContext.jsx'
 import { useNavigate } from 'react-router-dom'
+import { saveToGallery } from '../utils/api.js';
 
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
@@ -142,6 +143,17 @@ function Start()
   }
 };
 
+const handleSaveToGallery = async (imageData) => {
+  try {
+    const response = await saveToGallery(imageData, "My Drawing");
+    console.log('Image saved to gallery:', response);
+    // Optionally, show a success message to the user
+  } catch (error) {
+    console.error('Failed to save image to gallery:', error);
+    // Optionally, show an error message to the user
+  }
+};
+
 
   return (
     <>
@@ -270,6 +282,7 @@ function Start()
                         currentImageType={currentImageType}
                         onActivityUpdate={handleCanvasActivity}
                         onInactivityTimeout={handleInactivityTimeout}
+                        onSaveToGallery={handleSaveToGallery}
                       />
                     </div>
 

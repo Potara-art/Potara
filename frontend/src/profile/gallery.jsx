@@ -1,13 +1,30 @@
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import star from '../assets/star.png';
 import swirl from '../assets/swirl.png';
+import { getGalleryImages } from '../utils/api';
 
-function Gallery() 
-{
-  // TODO: replace with your real gallery data (URLs or objects)
-  const gallery = []; // e.g., ['img1.png','img2.png'] or [{src, alt}, ...]
+function Gallery() {
+  const [gallery, setGallery] = useState([]);
+  const [loading, setLoading] = useState(true);
   const MIN_SLOTS = 4;
+
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await getGalleryImages();
+        setGallery(response.galleryImages || []);
+      } catch (error) {
+        console.error("Failed to fetch gallery images:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGallery();
+  }, []);
+
   const totalSlots = Math.max(MIN_SLOTS, gallery.length);
 
   return (
@@ -39,25 +56,29 @@ function Gallery()
             </p>
 
             {/* Grid: 1/2/3/4 columns by breakpoint; rows auto-add when items > columns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array.from({ length: totalSlots }).map((_, i) => {
-                const item = gallery[i];
-                return (
-                  <div
-                    key={i}
-                    className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full h-56 overflow-hidden"
-                  >
-                    {item ? (
-                      <img
-                        src={typeof item === 'string' ? item : item.src}
-                        alt={typeof item === 'string' ? '' : (item.alt || 'Gallery item')}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
+            {loading ? (
+              <p className="text-center">Loading gallery...</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {Array.from({ length: totalSlots }).map((_, i) => {
+                  const item = gallery[i];
+                  return (
+                    <div
+                      key={i}
+                      className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full h-56 overflow-hidden"
+                    >
+                      {item ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title || 'Gallery item'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </section>
       </main>

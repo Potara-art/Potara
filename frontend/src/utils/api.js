@@ -44,3 +44,11 @@ export const del = (endpoint) => {
     method: 'DELETE',
   })
 }
+
+export const saveToGallery = (imageData, title) => {
+  return post('/gallery', { imageData, title });
+};
+
+export const getGalleryImages = () => {
+  return get('/gallery');
+};

@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import potaraLogo from '../assets/potara-symbol.png'; // adjust if your path differs
 
-export default function Canvas({ referenceData, currentImageType, onActivityUpdate, onInactivityTimeout }) {
+export default function Canvas({ referenceData, currentImageType, onActivityUpdate, onInactivityTimeout, onSaveToGallery }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const [currentColor, setCurrentColor] = useState('#000000');
@@ -223,6 +223,15 @@ useEffect(() => {
     link.click();
   };
 
+  const saveToGallery = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const imageData = canvas.toDataURL('image/png');
+    if (onSaveToGallery) {
+      onSaveToGallery(imageData);
+    }
+  };
+
   const toggleEraser = () => {
     setTool((t) => (t === 'eraser' ? 'pen' : 'eraser'));
   };
@@ -305,6 +314,14 @@ useEffect(() => {
               title="Download PNG"
             >
               Download
+            </button>
+
+            <button
+              onClick={saveToGallery}
+              className="px-3 py-2 rounded-lg border bg-blue-500 text-white border-gray-300 hover:bg-blue-700 font-unkempt"
+              title="Save to Account"
+            >
+              Save to Account
             </button>
           </div>
         </div>

@@ -585,12 +585,9 @@ server.get("/gallery", async (req, res) => {
     const decoded = verifyToken(token);
     userId = decoded.userId;
 
-    const drawings = await prisma.drawing.findMany({
+    const galleryImages = await prisma.galleryImage.findMany({
       where: {
         user_id: userId
-      },
-      include: {
-        reference: true // Include the associated reference
       },
       orderBy: {
         created_at: "desc" // Most recent first
@@ -598,15 +595,11 @@ server.get("/gallery", async (req, res) => {
     });
 
     return res.status(200).json({
-      drawings: drawings.map(drawing => ({
-        id: drawing.id,
-        drawingUrl: drawing.url,
-        feedback: drawing.feedback,
-        referenceId: drawing.reference_id,
-        originalImageUrl: drawing.reference.url,
-        shapeImageUrl: drawing.reference.shape_url,
-        outlineImageUrl: drawing.reference.outline_url,
-        createdAt: drawing.created_at
+      galleryImages: galleryImages.map(image => ({
+        id: image.id,
+        title: image.title,
+        imageUrl: image.url,
+        createdAt: image.created_at
       }))
     });
   } catch (err) {
@@ -615,6 +608,63 @@ server.get("/gallery", async (req, res) => {
       error: "Error retrieving gallery",
       details: err.message
     });
+  }
+});
+
+server.post("/gallery", async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+    let userId = null;
+
+    if (!token) {
+      return res.status(401).json({
+        error: "User not authenticated"
+      });
+    }
+
+    const decoded = verifyToken(token);
+    userId = decoded.userId;
+
+    const { imageData, title } = req.body;
+
+    if (!imageData || !title) {
+      return res.status(400).json({ error: "Image data and title are required" });
+    }
+
+    const base64Data = imageData.replace(/^data:image\/png;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    const timestamp = Date.now();
+    const fileName = `gallery/${userId}/${timestamp}.png`;
+
+    await minioClient.putObject(
+      BUCKET_NAME,
+      fileName,
+      buffer,
+      buffer.length,
+      {
+        "Content-Type": "image/png"
+      }
+    );
+
+    const imageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${fileName}`;
+
+    const galleryImage = await prisma.galleryImage.create({
+      data: {
+        title,
+        url: imageUrl,
+        user_id: userId
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Image saved to gallery successfully",
+      galleryImage
+    });
+  } catch (error) {
+    console.error("Gallery save error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

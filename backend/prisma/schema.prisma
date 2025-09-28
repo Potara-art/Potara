@@ -21,7 +21,17 @@ model User {
   password_hash String
   references    Reference[]
   drawings      Drawing[]
+  galleryImages GalleryImage[]
   created_at    DateTime    @default(now())
+}
+
+model GalleryImage {
+  id        Int      @id @default(autoincrement())
+  title     String
+  url       String
+  user      User     @relation(fields: [user_id], references: [id])
+  user_id   Int
+  created_at DateTime @default(now())
 }
 
 model Reference {
