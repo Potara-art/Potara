@@ -88,7 +88,7 @@ export default function Canvas({ referenceData, currentImageType, onActivityUpda
       // Check if enough time has passed since Shelly last talked (4+ seconds)
       const currentTime = Date.now();
       const timeSinceLastTalk = currentTime - lastShellyTalkTimeRef.current;
-      const enoughTimePassed = timeSinceLastTalk > 4000; // Reduced to 4 seconds
+      const enoughTimePassed = timeSinceLastTalk > 9000; // Reduced to 9 seconds
       
       // For debugging timer conditions
       console.debug('Periodic check - Canvas changes:', hasChanges, 
