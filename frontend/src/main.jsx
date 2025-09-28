@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import App from './App'
-import Start from './Start/Start.jsx'
+import Start from './Start/start.jsx'
 import SignUp from './auth/sign-up.jsx'
 import LogIn from './auth/log-in.jsx'
 import './index.css'

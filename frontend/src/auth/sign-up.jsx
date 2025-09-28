@@ -1,11 +1,26 @@
 import testBg from '../assets/testBg.svg'
+import logo from '../assets/potara-logo.png'
 
-function SignUp() {
+function SignUp() 
+{
   return (
     <main
-      className="min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
+      className="relative min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
       style={{ backgroundImage: `url(${testBg})` }}
     >
+      {/* Logo (top-left) */}
+      <a href="/" className="absolute top-5 left-5">
+        <img src={logo} alt="Potara Logo" className="w-32" />
+      </a>
+
+      {/* Close button (top-right) */}
+      <a
+        href="/start"
+        className="absolute top-1 right-8 text-white text-7xl font-bold hover:text-gray-200 transition"
+      >
+        ×
+      </a>
+
       {/* Sign Up Card */}
       <div className="w-full max-w-md bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 mx-4">
         <h1 className="font-unkempt text-4xl text-center mb-6 almost-black">
