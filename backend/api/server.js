@@ -446,26 +446,7 @@ server.post("/live_feedback", async (req, res) => {
 
     // Get reference image as base64
     // Fix URL for internal Docker network access
-    let internalReferenceUrl = reference.url.replace(
-      "localhost:9000",
-      "minio:9000"
-    );
-
-    // Try multiple URL transformation strategies
-    if (internalReferenceUrl === reference.url) {
-      // If localhost:9000 replacement didn't work, try other patterns
-      internalReferenceUrl = reference.url.replace(
-        "127.0.0.1:9000",
-        "minio:9000"
-      );
-    }
-    if (internalReferenceUrl === reference.url) {
-      // If no replacement worked, try force replacing the host
-      internalReferenceUrl = reference.url.replace(
-        /https?:\/\/[^\/]+/,
-        "http://minio:9000"
-      );
-    }
+    let internalReferenceUrl = reference.url;
 
     const fetch = await import("node-fetch");
     let base64Reference;
