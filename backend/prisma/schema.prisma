@@ -29,8 +29,8 @@ model Reference {
   url         String
   shape_url   String
   outline_url String
-  user        User      @relation(fields: [user_id], references: [id])
-  user_id     Int
+  user        User?      @relation(fields: [user_id], references: [id])
+  user_id     Int?
   drawings    Drawing[]
   created_at  DateTime  @default(now())
 }

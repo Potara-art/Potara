@@ -218,17 +218,16 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
     // Generate direct URL for the original image
     const originalImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${originalFileName}`;
 
-    // save to db if logged in
-    if (userId) {
-      await prisma.reference.create({
-        data: {
-          url: originalImageUrl,
-          shape_url: shapeUrl,
-          outline_url: outlineUrl,
-          user_id: userId
-        }
-      });
-    }
+    // save reference to db (needed for feedback)
+    referenceDb = await prisma.reference.create({
+      data: {
+        url: originalImageUrl,
+        shape_url: shapeUrl,
+        outline_url: outlineUrl,
+        user_id: userId
+      }
+    });
+    
 
     res.json({
       success: true,
@@ -236,6 +235,7 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
       originalImageUrl: originalImageUrl,
       shapeImageUrl: shapeUrl,
       outlineImageUrl: outlineUrl,
+      referenceId: referenceDb.id,
       filename: originalFileName
     });
   } catch (error) {
@@ -319,16 +319,18 @@ try {
 
     const referenceUrl = reference.url;
 
+    // referenceUrl says localhost, must fix
+    const internalReferenceUrl = referenceUrl.replace("localhost:9000", "minio:9000");
+
     const fetch = await import('node-fetch');
-    const referenceResponse = await fetch.default(referenceUrl);
+    const referenceResponse = await fetch.default(internalReferenceUrl);
     const referenceBuffer = await referenceResponse.arrayBuffer();
 
-    const base64Reference = Buffer.from(referenceBuffer).toString();
-
+    const base64Reference = Buffer.from(referenceBuffer).toString('base64');
     const prompt = [
       {
         text:
-          `You've been given a drawing user ${username} has made & reference image. They are working on going from reference image to their own image through understanding the basic shapes of the original image. Your job is to provide helpful feedback the user can use to improve their art. Be extremely friendly and nice. The user will not prompt you for additional advice, so you need to be comprehensive in one response.`
+          `You've been given a drawing user ${username} has made & reference image. They are working on going from reference image to their own image through understanding the basic shapes of the original image. Your job is to provide helpful feedback the user can use to improve their art. Be extremely friendly and nice. The user will not prompt you for additional advice, so you need to be comprehensive in one response. Make sure to compare the user's drawing to the reference image. The closer the user is to the refernence, the better.`
       },
       {
         inlineData: {
