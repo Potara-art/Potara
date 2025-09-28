@@ -57,6 +57,22 @@
   --animate-tilt-snap-2: tilt-snap-2 290ms steps(2, jump-none) infinite alternate;
 }
 
+@keyframes shelly-bounce-small {
+  0%, 100% {
+    transform: translateY(-4px); /* higher bounce up */
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(2px);  /* same down travel */
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* utility class */
+.shelly-bounce {
+  animation: shelly-bounce-small 1s infinite;
+}
+
 /* a {
   font-weight: 500;
   color: #646cff;

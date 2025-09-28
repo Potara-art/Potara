@@ -81,7 +81,7 @@ export default function Shelly({ feedback, isVisible, onFeedbackComplete }) {
           src={mouthOpen ? shellyOpenImg : shellyClosedImg}
           alt="Shelly the art mentor"
           className={`w-32 h-32 transition-all duration-200 ${
-            isAnimating ? 'animate-bounce' : ''
+            isAnimating ? 'shelly-bounce' : ''
           }`}
         />
 
