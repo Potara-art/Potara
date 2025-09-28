@@ -1,6 +1,8 @@
 import Header from '../components/Header'
 import React, { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer'
+import Canvas from './canvas.jsx' // <-- Capitalize to match the file on case-sensitive systems
+
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
 import squiggle from '../assets/Squiggle.svg'
@@ -55,7 +57,6 @@ function Start()
       <Header />
       <main className="">
         <div className="min-h-screen flex justify-center bg-beige mt-20">
-          {/* anchor spark to this box */}
           <div className="text-center relative">
             {!uploadedImage && (
               <>
@@ -110,11 +111,7 @@ function Start()
         {/* instructions bar */}
         <div className="flex flex-col h-40 mt-0 bg-sillyyellow text-center justify-center items-center w-full relative">
           <h1 className="font-kavivanar almost-black text-6xl">I N S T R U C T I O N S</h1>
-
-          {/* now these anchor to the yellow bar */}
           <img className="absolute bottom-[20px]" src={squiggle} alt="" />
-
-          {/* nudge star/heart where you want; these are just examples */}
           <img src={star} alt="Star" className="absolute left-[300px] w-24 h-24 animate-tilt-snap-2" />
           <img src={heart} alt="Heart" className="absolute right-[310px] w-24 h-24 animate-tilt-snap-2" />
         </div>
