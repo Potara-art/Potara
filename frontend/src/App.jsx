@@ -7,6 +7,7 @@ import swirl from './assets/swirl.png'
 import heart from './assets/heart.png'
 import squiggle from './assets/Squiggle.svg'
 import Header from './components/Header'
+import Footer from './components/Footer'
 
 function App() 
 {
@@ -59,11 +60,13 @@ function App()
         />
 
         <button
-          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt"
+          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-sillyyellow
+                    transition-transform duration-200 ease-in-out transform hover:scale-105 font-unkempt cursor-pointer"
           onClick={() => navigate('/start')}
         >
           Get Started
         </button>
+
 
       </div>
 

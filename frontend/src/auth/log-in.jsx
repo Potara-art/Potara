@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext.jsx'
 import testBg from '../assets/testBg.png'
 import logo from '../assets/potara-logo.png'
 
-function LogIn() {
+function LogIn() 
+{
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')

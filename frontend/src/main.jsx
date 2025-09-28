@@ -9,6 +9,13 @@ import SignUp from "./auth/sign-up.jsx";
 import LogIn from "./auth/log-in.jsx";
 import "./index.css";
 
+import App from './App'
+import Start from './Start/Start.jsx'
+import SignUp from './auth/sign-up.jsx'
+import LogIn from './auth/log-in.jsx'
+import Gallery from './profile/gallery.jsx'
+import './index.css'
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
@@ -18,7 +25,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/start" element={<Start />} />
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/log-in" element={<LogIn />} />
-        </Routes>
+          <Route path="/gallery" element={<Gallery />} />
+      </Routes>
       </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>
