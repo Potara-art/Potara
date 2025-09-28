@@ -2,10 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
 const { GoogleGenAI } = require("@google/genai");
 const { PrismaClient } = require("../generated/prisma");
+const Minio = require("minio");
 
 const server = express();
 const prisma = new PrismaClient({});
@@ -13,19 +12,34 @@ const prisma = new PrismaClient({});
 server.use(cors());
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
-server.use("/storage", express.static(path.join(__dirname, "../storage")));
 
-const storage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    cb(null, "storage/uploads/");
-  },
-  filename: function(req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  }
+const minioClient = new Minio.Client({
+  endPoint: process.env.MINIO_ENDPOINT || "localhost",
+  port: parseInt(process.env.MINIO_PORT) || 9000,
+  useSSL: process.env.MINIO_USE_SSL === "true",
+  accessKey: process.env.MINIO_ACCESS_KEY || "admin",
+  secretKey: process.env.MINIO_SECRET_KEY || "password"
 });
 
+const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "potara-images";
+
+// Initialize MinIO bucket
+const initializeBucket = async () => {
+  try {
+    const exists = await minioClient.bucketExists(BUCKET_NAME);
+    if (!exists) {
+      await minioClient.makeBucket(BUCKET_NAME, "us-east-1");
+      console.log(`Bucket '${BUCKET_NAME}' created successfully.`);
+    }
+  } catch (error) {
+    console.error("Error initializing MinIO bucket:", error);
+  }
+};
+
+initializeBucket();
+
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -38,25 +52,28 @@ const upload = multer({
   }
 });
 
-server.get("/users", async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    res.status(500).json({ error: "An error occurred while fetching users." });
-  }
-});
-
 server.post("/api/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
     }
 
+    // Upload original image to MinIO
+    const timestamp = Date.now();
+    const originalFileName = `uploads/${timestamp}-${req.file.originalname}`;
+
+    await minioClient.putObject(
+      BUCKET_NAME,
+      originalFileName,
+      req.file.buffer,
+      req.file.buffer.length,
+      {
+        "Content-Type": req.file.mimetype
+      }
+    );
+
     const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
-    const imageBuffer = fs.readFileSync(req.file.path);
-    const base64Image = imageBuffer.toString("base64");
+    const base64Image = req.file.buffer.toString("base64");
 
     const prompt = [
       {
@@ -80,13 +97,6 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
     console.log("Received response from Gemini API");
     console.log("Response structure:", JSON.stringify(response, null, 2));
 
-    // Ensure processed directory exists
-    const processedDir = path.join(__dirname, "../storage/processed");
-    if (!fs.existsSync(processedDir)) {
-      fs.mkdirSync(processedDir, { recursive: true });
-      console.log("Created processed directory:", processedDir);
-    }
-
     let processedImageUrl = null;
     let textResponse = null;
 
@@ -98,37 +108,56 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
         const imageData = part.inlineData.data;
         const buffer = Buffer.from(imageData, "base64");
 
-        // Create unique filename with timestamp
-        const timestamp = Date.now();
-        const processedFilename = `processed_${timestamp}_${req.file.originalname}`;
-        const processedImagePath = path.join(processedDir, processedFilename);
+        // Upload processed image to MinIO
+        const processedFileName = `processed/processed_${timestamp}_${req.file
+          .originalname}`;
 
-        fs.writeFileSync(processedImagePath, buffer);
-        processedImageUrl = `/storage/processed/${processedFilename}`;
-        console.log("Image saved to:", processedImagePath);
+        await minioClient.putObject(
+          BUCKET_NAME,
+          processedFileName,
+          buffer,
+          buffer.length,
+          {
+            "Content-Type": "image/png"
+          }
+        );
+
+        // Generate presigned URL for the processed image
+        processedImageUrl = await minioClient.presignedGetObject(
+          BUCKET_NAME,
+          processedFileName,
+          24 * 60 * 60
+        ); // 24 hours
+        console.log("Processed image uploaded to MinIO:", processedFileName);
       }
     }
+
+    // Generate presigned URL for the original image
+    const originalImageUrl = await minioClient.presignedGetObject(
+      BUCKET_NAME,
+      originalFileName,
+      24 * 60 * 60
+    ); // 24 hours
 
     res.json({
       success: true,
       message: "Image processed successfully",
-      originalImageUrl: `/storage/uploads/${req.file.filename}`,
+      originalImageUrl: originalImageUrl,
       processedImageUrl: processedImageUrl,
       textResponse: textResponse,
-      filename: req.file.filename
+      filename: originalFileName
     });
   } catch (error) {
     console.error("Error processing image:", error);
 
-    // More specific error handling
-    if (error.message && error.message.includes('API key')) {
+    if (error.message && error.message.includes("API key")) {
       return res.status(401).json({
         error: "API key error",
         details: "Please check your GEMINI_API_KEY environment variable"
       });
     }
 
-    if (error.message && error.message.includes('quota')) {
+    if (error.message && error.message.includes("quota")) {
       return res.status(429).json({
         error: "API quota exceeded",
         details: "Gemini API quota has been exceeded"
@@ -138,7 +167,7 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
     res.status(500).json({
       error: "An error occurred while processing the image",
       details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
     });
   }
 });
