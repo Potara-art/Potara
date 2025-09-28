@@ -625,8 +625,11 @@ server.get("/", async (req, res) => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
-  });  return res.status(200).json({message: `Hello, it is currently ${timestamp}`});
+    second: '2-digit',
+    timeZone: 'America/New_York',
+    timeZoneName: 'short'
+  }); 
+  return res.status(200).json({message: `Hello, it is currently ${timestamp}`});
 });
 
 module.exports = server;
