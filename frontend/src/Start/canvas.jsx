@@ -50,7 +50,7 @@ export default function Canvas({ referenceData, currentImageType, onActivityUpda
         // Get current canvas state for feedback
         const canvas = canvasRef.current;
         if (canvas && referenceData) {
-          const canvasData = canvas.toDataURL('image/png', 0.8);
+          const canvasData = canvas.toDataURL('image/png');
           onInactivityTimeout(canvasData);
         }
       }
