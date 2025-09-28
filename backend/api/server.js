@@ -175,7 +175,7 @@ const generateImageUrl = async (response, timestamp, req, type) => {
 };
 
 // this endpoint expects a reference image and will then draw shapes for the user to reference
-server.post("/api/upload_ref", upload.single("image"), async (req, res) => {
+server.post("/upload_ref", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
@@ -266,7 +266,7 @@ server.post("/api/upload_ref", upload.single("image"), async (req, res) => {
 });
 
 // this endpoint expects a drawn image and the url to the original reference and will create feedback based on it
-server.post("/api/upload_img", upload.single("image"), async (req, res) => {
+server.post("/upload_img", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
@@ -417,7 +417,7 @@ server.post("/api/upload_img", upload.single("image"), async (req, res) => {
 });
 
 // live feedback endpoint for real-time drawing guidance
-server.post("/api/live_feedback", async (req, res) => {
+server.post("/live_feedback", async (req, res) => {
   try {
     const { canvasData, referenceId, conversationHistory = [] } = req.body;
 
@@ -580,7 +580,7 @@ server.post("/api/live_feedback", async (req, res) => {
 });
 
 // this endpoint retrieves all the images an authenticated user has
-server.get("/api/gallery", async (req, res) => {
+server.get("/gallery", async (req, res) => {
   try {
     const token = req.cookies.auth_token;
     let userId = null;
@@ -620,7 +620,7 @@ server.get("/api/gallery", async (req, res) => {
   }
 });
 
-server.post("/api/gallery", async (req, res) => {
+server.post("/gallery", async (req, res) => {
   try {
     const token = req.cookies.auth_token;
     let userId = null;
@@ -679,7 +679,7 @@ server.post("/api/gallery", async (req, res) => {
 
 // ----------------- AUTHENTICATION -----------------
 
-server.post("/api/auth/register", async (req, res) => {
+server.post("/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -738,7 +738,7 @@ server.post("/api/auth/register", async (req, res) => {
   }
 });
 
-server.post("/api/auth/login", async (req, res) => {
+server.post("/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -789,7 +789,7 @@ server.post("/api/auth/login", async (req, res) => {
   }
 });
 
-server.post("/api/auth/logout", (_, res) => {
+server.post("/auth/logout", (_, res) => {
   res.clearCookie("auth_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -802,7 +802,7 @@ server.post("/api/auth/logout", (_, res) => {
   });
 });
 
-server.get("/api/auth/me", async (req, res) => {
+server.get("/auth/me", async (req, res) => {
   try {
     const token = req.cookies.auth_token;
 
