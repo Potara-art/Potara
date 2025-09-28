@@ -173,9 +173,20 @@ const generateImageUrl = async (response, timestamp, req, type) => {
 
 // this endpoint expects a reference image and will then draw shapes for the user to reference
 server.post("/upload_ref", upload.single("image"), async (req, res) => {
-  try {
+  try {    
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
+    }
+
+    let userId = null;
+    try {
+      const token = req.cookies.auth_token;
+      if (token) {
+        const decoded = verifyToken(token);
+        userId = decoded.userId;
+      }
+    } catch (err) {
+      console.log("No valid authentication token");
     }
 
     // Upload original image to MinIO
@@ -206,6 +217,18 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
 
     // Generate direct URL for the original image
     const originalImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${originalFileName}`;
+
+    // save to db if logged in
+    if (userId) {
+      await prisma.reference.create({
+        data: {
+          url: originalImageUrl,
+          shape_url: shapeUrl,
+          outline_url: outlineUrl,
+          user_id: userId
+        }
+      });
+    }
 
     res.json({
       success: true,

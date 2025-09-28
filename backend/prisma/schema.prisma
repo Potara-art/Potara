@@ -25,13 +25,14 @@ model User {
 }
 
 model Reference {
-  id         Int       @id @default(autoincrement())
-  url        String
-  shape_url  String
-  user       User      @relation(fields: [user_id], references: [id])
-  user_id    Int
-  drawings   Drawing[]
-  created_at DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  url         String
+  shape_url   String
+  outline_url String
+  user        User      @relation(fields: [user_id], references: [id])
+  user_id     Int
+  drawings    Drawing[]
+  created_at  DateTime  @default(now())
 }
 
 model Drawing {
