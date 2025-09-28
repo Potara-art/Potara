@@ -85,10 +85,10 @@ export default function Canvas({ referenceData, currentImageType, onActivityUpda
       // Check if Shelly isn't currently talking
       const shellyNotTalking = !isShellyTalking;
       
-      // Check if enough time has passed since Shelly last talked (10+ seconds)
+      // Check if enough time has passed since Shelly last talked (4+ seconds)
       const currentTime = Date.now();
       const timeSinceLastTalk = currentTime - lastShellyTalkTimeRef.current;
-      const enoughTimePassed = timeSinceLastTalk > 10000; // Increased to 10 seconds
+      const enoughTimePassed = timeSinceLastTalk > 4000; // Reduced to 4 seconds
       
       // For debugging timer conditions
       console.debug('Periodic check - Canvas changes:', hasChanges, 
@@ -131,9 +131,9 @@ export default function Canvas({ referenceData, currentImageType, onActivityUpda
   useEffect(() => {
     // Track when Shelly stops talking (transition from talking to not talking)
     if (previousTalkingStateRef.current && !isShellyTalking) {
-      // Shelly just stopped talking - start the 10-second cooldown timer
+      // Shelly just stopped talking - start the 4-second cooldown timer
       lastShellyTalkTimeRef.current = Date.now();
-      console.debug('Shelly stopped talking - starting 10s cooldown timer');
+      console.debug('Shelly stopped talking - starting 4s cooldown timer');
     }
     
     // Update previous state for next render
