@@ -6,13 +6,17 @@ import star from './assets/star.png'
 import swirl from './assets/swirl.png'
 import heart from './assets/heart.png'
 import squiggle from './assets/Squiggle.svg'
+import Header from './components/Header'
 
 function App() 
 {
   const navigate = useNavigate()
 
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
+    <>
+    <div className="relative h-screen overflow-hidden">
+      <Header></Header>
+      <div className='flex flex-col items-center justify-start pt-36'>
 
       {/* Foreground content */}
       <div className="relative z-10 flex flex-col items-center">
@@ -70,6 +74,8 @@ function App()
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] z-0"
       />
     </div>
+    </div>
+    </>
   )
 }
 

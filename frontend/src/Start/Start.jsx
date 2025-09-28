@@ -18,13 +18,13 @@ function Start()
       <Header />
 
       {/* Push content below fixed header height (match your header h-20) */}
-      <main className="pt-2">
+      <main className="">
         {/* hero */}
-        <div className="min-h-screen flex justify-center items-center bg-beige">
+        <div className="min-h-screen flex justify-center bg-beige mt-20">
           {/* anchor spark to this box */}
           <div className="text-center relative">
-            <img className="absolute left-[60px] animate-tilt-snap-2" src={spark} alt="" />
-            <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-20">
+            <img className="absolute left-[60px] animate-tilt-snap-2 -top-24" src={spark} alt="" />
+            <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-0">
               Learn to draw any image by breaking it down into its{" "}
               <span className="awesome-blue">simplest</span> shapes!
             </p>
@@ -35,7 +35,7 @@ function Start()
         </div>
 
         {/* instructions bar */}
-        <div className="flex flex-col h-40 mt-20 bg-sillyyellow text-center justify-center items-center w-full relative">
+        <div className="flex flex-col h-40 mt-0 bg-sillyyellow text-center justify-center items-center w-full relative">
           <h1 className="font-kavivanar almost-black text-6xl">I N S T R U C T I O N S</h1>
 
           {/* now these anchor to the yellow bar */}
