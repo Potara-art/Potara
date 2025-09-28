@@ -3,13 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import potaraLogo from '../assets/potara-symbol.png'; // adjust if your path differs
 
-export default function Canvas({
-  referenceData,
-  currentImageType,
-  onActivityUpdate,
-  onInactivityTimeout,
-  onSaveToGallery
-}) {
+export default function Canvas({ referenceData, currentImageType, onActivityUpdate, onPeriodicCheck, onSaveToGallery, isShellyTalking }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const [currentColor, setCurrentColor] = useState('#000000');
@@ -23,6 +17,12 @@ export default function Canvas({
   const activityTimerRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
   const hasTriggeredTimeoutRef = useRef(false);
+  
+  // Add these new refs for tracking canvas changes and Shelly's state
+  const previousCanvasDataRef = useRef('');
+  const lastShellyTalkTimeRef = useRef(0);
+  const checkIntervalRef = useRef(null);
+  const previousTalkingStateRef = useRef(false);
 
   const CURSOR_MAX_PX = 32;   // smaller cursor (try 24–40)
   const HOTSPOT_X_PCT = 0.18; // 0 = far left, 1 = far right   (smaller -> image moves RIGHT)
@@ -49,14 +49,11 @@ export default function Canvas({
 
     if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
 
+    // Set new timer for 7 seconds - no longer activating Shelly
     activityTimerRef.current = setTimeout(() => {
-      if (!hasTriggeredTimeoutRef.current && onInactivityTimeout) {
+      if (!hasTriggeredTimeoutRef.current) {
         hasTriggeredTimeoutRef.current = true;
-        const canvas = canvasRef.current;
-        if (canvas && referenceData) {
-          const canvasData = canvas.toDataURL('image/png');
-          onInactivityTimeout(canvasData);
-        }
+        // No longer triggering Shelly on inactivity
       }
     }, 7000); // 7 seconds
 
@@ -65,16 +62,83 @@ export default function Canvas({
 
   const recordActivity = () => resetActivityTimer();
 
+  // Initialize periodic checking for Shelly feedback
   useEffect(() => {
-    resetActivityTimer();
-    return () => {
-      if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
+    if (!referenceData) return;
+    
+    // Clear any existing interval
+    if (checkIntervalRef.current) {
+      clearInterval(checkIntervalRef.current);
+    }
+    
+    // Set up new interval to check every 7 seconds
+    checkIntervalRef.current = setInterval(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      // Get current canvas state
+      const currentCanvasData = canvas.toDataURL('image/png');
+      
+      // Check if changes were made since last prompt
+      const hasChanges = currentCanvasData !== previousCanvasDataRef.current && previousCanvasDataRef.current !== '';
+      
+      // Check if Shelly isn't currently talking
+      const shellyNotTalking = !isShellyTalking;
+      
+      // Check if enough time has passed since Shelly last talked (10+ seconds)
+      const currentTime = Date.now();
+      const timeSinceLastTalk = currentTime - lastShellyTalkTimeRef.current;
+      const enoughTimePassed = timeSinceLastTalk > 10000; // Increased to 10 seconds
+      
+      // For debugging timer conditions
+      console.debug('Periodic check - Canvas changes:', hasChanges, 
+                    'Shelly not talking:', shellyNotTalking,
+                    'Cooldown elapsed:', enoughTimePassed,
+                    'Time since last talk:', Math.round(timeSinceLastTalk/1000) + 's');
+      
+      // If all conditions are met, trigger Shelly via the periodic check ONLY
+      if (hasChanges && shellyNotTalking && enoughTimePassed) {
+        // Save current state to compare against next time
+        previousCanvasDataRef.current = currentCanvasData;
+        
+        // Trigger feedback via periodic checking (only way Shelly gets activated now)
+        if (onPeriodicCheck) {
+          console.debug('Activating Shelly via periodic check');
+          onPeriodicCheck(currentCanvasData);
+        }
+      }
+    }, 7000);
+    
+    // Initial canvas snapshot
+    const takeInitialSnapshot = () => {
+      if (canvasRef.current) {
+        previousCanvasDataRef.current = canvasRef.current.toDataURL('image/png');
+      }
     };
-  }, [onInactivityTimeout, referenceData]);
-
+    
+    // Small delay to ensure canvas is properly initialized
+    setTimeout(takeInitialSnapshot, 500);
+    
+    // Cleanup on unmount
+    return () => {
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+      }
+    };
+  }, [referenceData, onPeriodicCheck, isShellyTalking]);
+  
+  // Add effect to update lastShellyTalkTime when Shelly STOPS talking
   useEffect(() => {
-    if (referenceData) resetActivityTimer();
-  }, [referenceData, onInactivityTimeout]);
+    // Track when Shelly stops talking (transition from talking to not talking)
+    if (previousTalkingStateRef.current && !isShellyTalking) {
+      // Shelly just stopped talking - start the 10-second cooldown timer
+      lastShellyTalkTimeRef.current = Date.now();
+      console.debug('Shelly stopped talking - starting 10s cooldown timer');
+    }
+    
+    // Update previous state for next render
+    previousTalkingStateRef.current = isShellyTalking;
+  }, [isShellyTalking]);
 
   // Initialize canvas/context
   useEffect(() => {
