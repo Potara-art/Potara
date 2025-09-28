@@ -1,11 +1,8 @@
-import { useNavigate } from 'react-router-dom'
 import testBg from '../assets/testBg.png'
 import logo from '../assets/potara-logo.png'
 
 function LogIn() 
 {
-    const navigate = useNavigate()
-
   return (
     <main
       className="relative min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
@@ -58,7 +55,6 @@ function LogIn()
           <button
             type="submit"
             className="w-full bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl py-3 rounded-2xl shadow-md transition"
-            onClick={() => navigate('/gallery')}
           >
             Log In
           </button>
