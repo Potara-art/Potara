@@ -48,6 +48,7 @@ services:
       environment:
         MINIO_ROOT_USER: admin
         MINIO_ROOT_PASSWORD: password
+        MINIO_BROWSER_REDIRECT_URL: "https://potara.art/minio"
       command: server /data --console-address ":9001"
       volumes:
         - minio_data:/root/.minio_data

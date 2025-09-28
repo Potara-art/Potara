@@ -1,8 +1,34 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import testBg from '../assets/testBg.png'
 import logo from '../assets/potara-logo.png'
 
 function LogIn() 
 {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const { login, loading } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (!email || !password) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    try {
+      await login(email, password)
+      navigate('/start')
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
   return (
     <main
       className="relative min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
@@ -27,7 +53,13 @@ function LogIn()
           Log in to your Account
         </h1>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-2xl">
+              {error}
+            </div>
+          )}
+
           <div>
             <label htmlFor="email" className="block text-sm almost-black mb-1">
               Email
@@ -35,8 +67,11 @@ function LogIn()
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="create@potara.art"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black placeholder-gray-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
@@ -47,16 +82,20 @@ function LogIn()
             <input
               id="password"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black placeholder-gray-500 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl py-3 rounded-2xl shadow-md transition"
+            disabled={loading}
+            className="w-full bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl py-3 rounded-2xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Log In
+            {loading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 

@@ -1,15 +1,36 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const { GoogleGenAI } = require("@google/genai");
 const { PrismaClient } = require("../generated/prisma");
 const Minio = require("minio");
+const {
+  generateToken,
+  hashPassword,
+  verifyPassword,
+  verifyToken
+} = require("../utils/auth");
 
 const server = express();
-const prisma = new PrismaClient({});
+const prisma = new PrismaClient({
+  omit: {
+    user: {
+      password_hash: true
+    }
+  }
+});
 
-server.use(cors());
+const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
+
+server.use(
+  cors({
+    credentials: true,
+    origin: process.env.FRONTEND_URL || "http://localhost:5173"
+  })
+);
+server.use(cookieParser());
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
@@ -59,7 +80,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
@@ -68,7 +89,90 @@ const upload = multer({
   }
 });
 
-server.post("/api/upload", upload.single("image"), async (req, res) => {
+// takes in an image and returns the image of shapes drawn over the original
+const generateShapes = async (base64Image) => {
+    const prompt = [
+      {
+        text: "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw FILLED IN shapes on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each shape should be outlined with a unique, high contrast color, BUT the shape itself should be a SOLID COLOR similar to the ORIGINAL IMAGE. Preserve the original image, only draw on top with each shape. Match your shapes as closely with the figure's edges as possible. The shapes should connect together to create an outline of the figure. Use multiple shapes for features and details. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE"},
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Image
+        }
+      }
+    ];
+
+    console.log("Sending request to Gemini API...");
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: prompt
+    });
+
+    console.log("Received response from Gemini API");
+    console.log("Response structure:", JSON.stringify(response, null, 2));
+
+    return response;
+}
+
+
+const generateOutlines = async (base64Image) => {
+    const prompt = [
+      {
+        text: "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw OUTLINES OF SHAPES on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each outline should be in a unique, high contrast color. Preserve the original image, the original image should be visible beneath the outlines. You are only drawing the OUTLINE of shapes, DO NOT fill in the shapes. The only thing you are drawing are outlines, so the original image should be easily visible underneath. Only draw on top of the original image with the outlines for each shape. Match your outlines as closely with the figure's edges as possible. The outlined shapes should connect together to create an outline of the figure. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE THIS IS THE MOST IMPORTANT PART. THE OUTLINES MUST BE WITHIN THE CONTOURS OF THE ORIGINAL IMAGE"},
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Image
+        }
+      }
+    ];
+
+    console.log("Sending request to Gemini API...");
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: prompt
+    });
+
+    console.log("Received response from Gemini API");
+    console.log("Response structure:", JSON.stringify(response, null, 2));
+
+    return response;
+}
+
+const generateImageUrl = async (response, timestamp, req, type) => {
+    let processedImageUrl = null;
+
+    for (const part of response.candidates[0].content.parts) {
+      if (part.text) {
+      } else if (part.inlineData) {
+        const imageData = part.inlineData.data;
+        const buffer = Buffer.from(imageData, "base64");
+
+        // Upload processed image to MinIO
+        const processedFileName = `processed/${type}processed_${timestamp}_${req.file
+          .originalname}`;
+
+        await minioClient.putObject(
+          BUCKET_NAME,
+          processedFileName,
+          buffer,
+          buffer.length,
+          {
+            "Content-Type": "image/png"
+          }
+        );
+
+        // Generate direct URL for the processed image
+        processedImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${processedFileName}`;
+        console.log("Processed image uploaded to MinIO:", processedFileName);
+      }
+    }
+
+    return processedImageUrl;
+}
+
+// this endpoint expects a reference image and will then draw shapes for the user to reference
+server.post("/upload_ref", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
@@ -88,61 +192,17 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
       }
     );
 
-    const ai = new GoogleGenAI(process.env.GEMINI_API_KEY);
     const base64Image = req.file.buffer.toString("base64");
 
-    const prompt = [
-      {
-        text:
-          "Analyze this image and return a new version of the image where all content is reduced to its most basic geometric shapes (such as circles, rectangles, squares, triangles, and lines). Ignore all complex details, textures, and decorative elements. The output should be a simplified image that visually represents only the essential geometric shapes found in the original image, using solid colors for each shape."
-      },
-      {
-        inlineData: {
-          mimeType: "image/png",
-          data: base64Image
-        }
-      }
-    ];
+    const [shapes, outlines] = await Promise.all([
+      generateShapes(base64Image),
+      generateOutlines(base64Image)
+    ]);
 
-    console.log("Sending request to Gemini API...");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents: prompt
-    });
-
-    console.log("Received response from Gemini API");
-    console.log("Response structure:", JSON.stringify(response, null, 2));
-
-    let processedImageUrl = null;
-    let textResponse = null;
-
-    for (const part of response.candidates[0].content.parts) {
-      if (part.text) {
-        textResponse = part.text;
-        console.log("Text response from Gemini:", part.text);
-      } else if (part.inlineData) {
-        const imageData = part.inlineData.data;
-        const buffer = Buffer.from(imageData, "base64");
-
-        // Upload processed image to MinIO
-        const processedFileName = `processed/processed_${timestamp}_${req.file
-          .originalname}`;
-
-        await minioClient.putObject(
-          BUCKET_NAME,
-          processedFileName,
-          buffer,
-          buffer.length,
-          {
-            "Content-Type": "image/png"
-          }
-        );
-
-        // Generate direct URL for the processed image
-        processedImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${processedFileName}`;
-        console.log("Processed image uploaded to MinIO:", processedFileName);
-      }
-    }
+    const [shapeUrl, outlineUrl] = await Promise.all([
+      generateImageUrl(shapes, timestamp, req, "shape"),
+      generateImageUrl(outlines, timestamp, req, "outline")
+    ]);
 
     // Generate direct URL for the original image
     const originalImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${originalFileName}`;
@@ -151,8 +211,8 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
       success: true,
       message: "Image processed successfully",
       originalImageUrl: originalImageUrl,
-      processedImageUrl: processedImageUrl,
-      textResponse: textResponse,
+      shapeImageUrl: shapeUrl,
+      outlineImageUrl: outlineUrl,
       filename: originalFileName
     });
   } catch (error) {
@@ -180,8 +240,164 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
   }
 });
 
-server.get("/", (req, res) => {
-  res.send("Hello, World!");
+// this endpoint expects a drawn image and will create feedback based on it
+server.post("/upload_img", upload.single("image"), async (req, res) => {
+  
+});
+
+server.post("/auth/register", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "Username, email, and password are required" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters long" });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ error: "User with this email already exists" });
+    }
+
+    const password_hash = await hashPassword(password);
+
+    const user = await prisma.user.create({
+      data: {
+        username,
+        email,
+        password_hash
+      }
+    });
+
+    const token = generateToken(user.id);
+
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict"
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+server.post("/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        password_hash: true
+      }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const isValidPassword = await verifyPassword(user.password_hash, password);
+
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const token = generateToken(user.id);
+
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict"
+    });
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+server.post("/auth/logout", (_, res) => {
+  res.clearCookie("auth_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict"
+  });
+
+  res.json({
+    success: true,
+    message: "Logout successful"
+  });
+});
+
+server.get("/auth/me", async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+
+    if (!token) {
+      return res.status(401).json({ error: "No authentication token" });
+    }
+
+    const decoded = verifyToken(token);
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Auth verification error:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
 });
 
 module.exports = server;
