@@ -22,8 +22,9 @@ const minioClient = new Minio.Client({
 });
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "potara-images";
+const MINIO_PUBLIC_URL =
+  process.env.MINIO_PUBLIC_URL || "http://localhost:9000";
 
-// Initialize MinIO bucket
 const initializeBucket = async () => {
   try {
     const exists = await minioClient.bucketExists(BUCKET_NAME);
@@ -31,6 +32,21 @@ const initializeBucket = async () => {
       await minioClient.makeBucket(BUCKET_NAME, "us-east-1");
       console.log(`Bucket '${BUCKET_NAME}' created successfully.`);
     }
+
+    const policy = {
+      Version: "2012-10-17",
+      Statement: [
+        {
+          Effect: "Allow",
+          Principal: "*",
+          Action: ["s3:GetObject"],
+          Resource: [`arn:aws:s3:::${BUCKET_NAME}/*`]
+        }
+      ]
+    };
+
+    await minioClient.setBucketPolicy(BUCKET_NAME, JSON.stringify(policy));
+    console.log(`Bucket '${BUCKET_NAME}' policy set to public read.`);
   } catch (error) {
     console.error("Error initializing MinIO bucket:", error);
   }
@@ -122,22 +138,14 @@ server.post("/api/upload", upload.single("image"), async (req, res) => {
           }
         );
 
-        // Generate presigned URL for the processed image
-        processedImageUrl = await minioClient.presignedGetObject(
-          BUCKET_NAME,
-          processedFileName,
-          24 * 60 * 60
-        ); // 24 hours
+        // Generate direct URL for the processed image
+        processedImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${processedFileName}`;
         console.log("Processed image uploaded to MinIO:", processedFileName);
       }
     }
 
-    // Generate presigned URL for the original image
-    const originalImageUrl = await minioClient.presignedGetObject(
-      BUCKET_NAME,
-      originalFileName,
-      24 * 60 * 60
-    ); // 24 hours
+    // Generate direct URL for the original image
+    const originalImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${originalFileName}`;
 
     res.json({
       success: true,
