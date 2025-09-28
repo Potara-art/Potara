@@ -30,8 +30,14 @@ function Header() {
               Hello, {user?.username}!
             </span>
             <button
+              onClick={() => navigate('/gallery')}
+              className="bg-[#EB9191] hover:bg-awesomeblue text-white font-unkempt text-xl px-6 py-2 rounded-2xl shadow-md transition transition-transform duration-200 ease-in-out transform hover:scale-105 cursor-pointer"
+            >
+              Gallery
+            </button>
+            <button
               onClick={handleLogout}
-              className="bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl px-6 py-2 rounded-2xl shadow-md transition"
+              className="bg-[#EB9191] hover:bg-awesomeblue text-white font-unkempt text-xl px-6 py-2 rounded-2xl shadow-md transition transition-transform duration-200 ease-in-out transform hover:scale-105 cursor-pointer"
             >
               Log Out
             </button>

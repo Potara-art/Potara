@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from './contexts/AuthContext.jsx'
 
 import mountains from './assets/mountains.svg'
 import potaraLogo from './assets/potara-logo.png'
@@ -9,9 +10,10 @@ import squiggle from './assets/Squiggle.svg'
 import Header from './components/Header'
 import Footer from './components/Footer'
 
-function App() 
+function App()
 {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
   return (
     <>
@@ -62,9 +64,9 @@ function App()
         <button
           className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-sillyyellow
                     transition-transform duration-200 ease-in-out transform hover:scale-105 font-unkempt cursor-pointer"
-          onClick={() => navigate('/start')}
+          onClick={() => navigate(`${isAuthenticated ? '/start' : '/sign-up'}`)}
         >
-          Get Started
+          {isAuthenticated ? 'Get Started' : 'Sign Up to Get Started'}
         </button>
 
 

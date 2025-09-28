@@ -2,13 +2,18 @@
 import React, { useRef, useState, useEffect } from 'react';
 import potaraLogo from '../assets/potara-symbol.png'; // adjust if your path differs
 
-export default function Canvas() {
+export default function Canvas({ referenceData, currentImageType, onActivityUpdate, onInactivityTimeout }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const [currentColor, setCurrentColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(5);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState('pen'); // 'pen' | 'eraser'
+
+  // Activity tracking
+  const activityTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+  const hasTriggeredTimeoutRef = useRef(false);
 
   const CURSOR_MAX_PX = 32;        // smaller cursor (try 24–40)
   const HOTSPOT_X_PCT = 0.18;      // 0 = far left, 1 = far right   (smaller -> image moves RIGHT)
@@ -27,6 +32,58 @@ export default function Canvas() {
     '#FF8DA1', // Pink
     '#895129', // Brown
   ];
+
+  // Activity tracking functions
+  const resetActivityTimer = () => {
+    lastActivityRef.current = Date.now();
+    hasTriggeredTimeoutRef.current = false;
+
+    // Clear existing timer
+    if (activityTimerRef.current) {
+      clearTimeout(activityTimerRef.current);
+    }
+
+    // Set new timer for 7 seconds
+    activityTimerRef.current = setTimeout(() => {
+      if (!hasTriggeredTimeoutRef.current && onInactivityTimeout) {
+        hasTriggeredTimeoutRef.current = true;
+        // Get current canvas state for feedback
+        const canvas = canvasRef.current;
+        if (canvas && referenceData) {
+          const canvasData = canvas.toDataURL('image/png', 0.8);
+          onInactivityTimeout(canvasData);
+        }
+      }
+    }, 7000); // 7 seconds
+
+    // Notify parent of activity
+    if (onActivityUpdate) {
+      onActivityUpdate();
+    }
+  };
+
+  const recordActivity = () => {
+    resetActivityTimer();
+  };
+
+  // Initialize activity timer when component mounts
+  useEffect(() => {
+    resetActivityTimer();
+
+    // Cleanup timer on unmount
+    return () => {
+      if (activityTimerRef.current) {
+        clearTimeout(activityTimerRef.current);
+      }
+    };
+  }, [onInactivityTimeout, referenceData]);
+
+  // Reset timer when reference data changes (new drawing session)
+  useEffect(() => {
+    if (referenceData) {
+      resetActivityTimer();
+    }
+  }, [referenceData, onInactivityTimeout]);
 
   // Initialize canvas/context
   useEffect(() => {
@@ -81,26 +138,70 @@ useEffect(() => {
     ctx.lineWidth = brushSize;
   }, [currentColor, brushSize]);
 
+  // Recalibrate canvas when layout changes (referenceData or currentImageType)
+  useEffect(() => {
+    // Force a brief recalculation to ensure proper coordinate alignment after layout shifts
+    const timer = setTimeout(() => {
+      if (canvasRef.current) {
+        // Trigger a reflow to ensure getBoundingClientRect() returns updated values
+        canvasRef.current.getBoundingClientRect();
+      }
+    }, 100); // Small delay to allow layout to settle
+
+    return () => clearTimeout(timer);
+  }, [referenceData, currentImageType]);
+
+  // Handle window resize events that could affect canvas positioning
+  useEffect(() => {
+    const handleResize = () => {
+      // Debounce resize events to avoid excessive recalculations
+      if (canvasRef.current) {
+        canvasRef.current.getBoundingClientRect();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const getCanvasCoordinates = (e) => {
+    const { canvas } = fabricCanvasRef.current;
+    // Always get fresh bounding rectangle to account for layout changes
+    const rect = canvas.getBoundingClientRect();
+
+    // Calculate the scale factor between displayed canvas and actual canvas
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    // Get coordinates relative to the displayed canvas
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
+    return { x, y };
+  };
+
   const startDrawing = (e) => {
     if (!fabricCanvasRef.current) return;
     setIsDrawing(true);
+    recordActivity(); // Record activity when starting to draw
 
     const { canvas, ctx } = fabricCanvasRef.current;
-    const rect = canvas.getBoundingClientRect();
+    const { x, y } = getCanvasCoordinates(e);
 
     // Set composite mode at the start of each stroke
     ctx.globalCompositeOperation =
       tool === 'eraser' ? 'destination-out' : 'source-over';
 
     ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.moveTo(x, y);
   };
 
   const draw = (e) => {
     if (!isDrawing || !fabricCanvasRef.current) return;
-    const { canvas, ctx } = fabricCanvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    recordActivity(); // Record activity while drawing
+    const { ctx } = fabricCanvasRef.current;
+    const { x, y } = getCanvasCoordinates(e);
+    ctx.lineTo(x, y);
     ctx.stroke();
   };
 
@@ -108,6 +209,7 @@ useEffect(() => {
 
   const clearCanvas = () => {
     if (!fabricCanvasRef.current) return;
+    recordActivity(); // Record activity when clearing canvas
     const { canvas, ctx } = fabricCanvasRef.current;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
@@ -208,18 +310,42 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Canvas */}
-      <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={500}
-          className="block w-full h-auto" // intentionally no Tailwind cursor-* here
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-        />
+      {/* Canvas Container with stable positioning */}
+      <div className="relative">
+        <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-white">
+          <canvas
+            ref={canvasRef}
+            width={800}
+            height={500}
+            className="block max-w-full h-auto" // Changed from w-full to max-w-full for better stability
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseLeave={stopDrawing}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              const touch = e.touches[0];
+              const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+              });
+              startDrawing(mouseEvent);
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              const touch = e.touches[0];
+              const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+              });
+              draw(mouseEvent);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              stopDrawing();
+            }}
+          />
+        </div>
       </div>
 
       <p className="text-xs text-gray-500 mt-2 mb-8 text-center">

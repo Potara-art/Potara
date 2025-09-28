@@ -90,90 +90,93 @@ const upload = multer({
 });
 
 // takes in an image and returns the image of shapes drawn over the original
-const generateShapes = async (base64Image) => {
-    const prompt = [
-      {
-        text: "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw FILLED IN shapes on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each shape should be outlined with a unique, high contrast color, BUT the shape itself should be a SOLID COLOR similar to the ORIGINAL IMAGE. Preserve the original image, only draw on top with each shape. Match your shapes as closely with the figure's edges as possible. The shapes should connect together to create an outline of the figure. Use multiple shapes for features and details. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE"},
-      {
-        inlineData: {
-          mimeType: "image/png",
-          data: base64Image
-        }
-      }
-    ];
-
-    console.log("Sending request to Gemini API...");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents: prompt
-    });
-
-    console.log("Received response from Gemini API");
-    console.log("Response structure:", JSON.stringify(response, null, 2));
-
-    return response;
-}
-
-
-const generateOutlines = async (base64Image) => {
-    const prompt = [
-      {
-        text: "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw OUTLINES OF SHAPES on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each outline should be in a unique, high contrast color. Preserve the original image, the original image should be visible beneath the outlines. You are only drawing the OUTLINE of shapes, DO NOT fill in the shapes. The only thing you are drawing are outlines, so the original image should be easily visible underneath. Only draw on top of the original image with the outlines for each shape. Match your outlines as closely with the figure's edges as possible. The outlined shapes should connect together to create an outline of the figure. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE THIS IS THE MOST IMPORTANT PART. THE OUTLINES MUST BE WITHIN THE CONTOURS OF THE ORIGINAL IMAGE"},
-      {
-        inlineData: {
-          mimeType: "image/png",
-          data: base64Image
-        }
-      }
-    ];
-
-    console.log("Sending request to Gemini API...");
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents: prompt
-    });
-
-    console.log("Received response from Gemini API");
-    console.log("Response structure:", JSON.stringify(response, null, 2));
-
-    return response;
-}
-
-const generateImageUrl = async (response, timestamp, req, type) => {
-    let processedImageUrl = null;
-
-    for (const part of response.candidates[0].content.parts) {
-      if (part.text) {
-      } else if (part.inlineData) {
-        const imageData = part.inlineData.data;
-        const buffer = Buffer.from(imageData, "base64");
-
-        // Upload processed image to MinIO
-        const processedFileName = `processed/${type}processed_${timestamp}_${req.file
-          .originalname}`;
-
-        await minioClient.putObject(
-          BUCKET_NAME,
-          processedFileName,
-          buffer,
-          buffer.length,
-          {
-            "Content-Type": "image/png"
-          }
-        );
-
-        // Generate direct URL for the processed image
-        processedImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${processedFileName}`;
-        console.log("Processed image uploaded to MinIO:", processedFileName);
+const generateShapes = async base64Image => {
+  const prompt = [
+    {
+      text:
+        "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw FILLED IN shapes on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each shape should be outlined with a unique, high contrast color, BUT the shape itself should be a SOLID COLOR similar to the ORIGINAL IMAGE. Preserve the original image, only draw on top with each shape. Match your shapes as closely with the figure's edges as possible. The shapes should connect together to create an outline of the figure. Use multiple shapes for features and details. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE"
+    },
+    {
+      inlineData: {
+        mimeType: "image/png",
+        data: base64Image
       }
     }
+  ];
 
-    return processedImageUrl;
-}
+  console.log("Sending request to Gemini API...");
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-image-preview",
+    contents: prompt
+  });
+
+  console.log("Received response from Gemini API");
+  console.log("Response structure:", JSON.stringify(response, null, 2));
+
+  return response;
+};
+
+const generateOutlines = async base64Image => {
+  const prompt = [
+    {
+      text:
+        "You are a drawing assistant tasked with simplifying a reference image into it's most basic shapes. You have been given a reference image. It is your task to draw OUTLINES OF SHAPES on top of that image that break down the figure into simple, easy to draw, pieces. Do not alter the reference image, simply draw on top of it. Each outline should be in a unique, high contrast color. Preserve the original image, the original image should be visible beneath the outlines. You are only drawing the OUTLINE of shapes, DO NOT fill in the shapes. The only thing you are drawing are outlines, so the original image should be easily visible underneath. Only draw on top of the original image with the outlines for each shape. Match your outlines as closely with the figure's edges as possible. The outlined shapes should connect together to create an outline of the figure. STAY IN THE COUNTOURS OF THE ORIGINAL IMAGE THIS IS THE MOST IMPORTANT PART. THE OUTLINES MUST BE WITHIN THE CONTOURS OF THE ORIGINAL IMAGE"
+    },
+    {
+      inlineData: {
+        mimeType: "image/png",
+        data: base64Image
+      }
+    }
+  ];
+
+  console.log("Sending request to Gemini API...");
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-image-preview",
+    contents: prompt
+  });
+
+  console.log("Received response from Gemini API");
+  console.log("Response structure:", JSON.stringify(response, null, 2));
+
+  return response;
+};
+
+const generateImageUrl = async (response, timestamp, req, type) => {
+  let processedImageUrl = null;
+
+  for (const part of response.candidates[0].content.parts) {
+    if (part.text) {
+    } else if (part.inlineData) {
+      const imageData = part.inlineData.data;
+      const buffer = Buffer.from(imageData, "base64");
+
+      // Upload processed image to MinIO
+      const processedFileName = `processed/${type}processed_${timestamp}_${req
+        .file.originalname}`;
+
+      await minioClient.putObject(
+        BUCKET_NAME,
+        processedFileName,
+        buffer,
+        buffer.length,
+        {
+          "Content-Type": "image/png"
+        }
+      );
+
+      // Generate direct URL for the processed image
+      processedImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${processedFileName}`;
+      console.log("Processed image uploaded to MinIO:", processedFileName);
+    }
+  }
+
+  return processedImageUrl;
+};
 
 // this endpoint expects a reference image and will then draw shapes for the user to reference
 server.post("/upload_ref", upload.single("image"), async (req, res) => {
-  try {    
+  try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
     }
@@ -227,7 +230,6 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
         user_id: userId
       }
     });
-    
 
     res.json({
       success: true,
@@ -265,13 +267,13 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
 
 // this endpoint expects a drawn image and the url to the original reference and will create feedback based on it
 server.post("/upload_img", upload.single("image"), async (req, res) => {
-try {
+  try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
     }
 
     const { referenceId } = req.body;
-    if(!referenceId) {
+    if (!referenceId) {
       return res.status(400).json({ error: "Reference ID not provided" });
     }
 
@@ -294,9 +296,11 @@ try {
       console.log("No valid authentication token");
     }
 
-    const reference = await prisma.reference.findUnique({ where: {id: parseInt(referenceId) }});
+    const reference = await prisma.reference.findUnique({
+      where: { id: parseInt(referenceId) }
+    });
 
-    if(!reference) {
+    if (!reference) {
       return res.status(404).json({ error: "Reference not found" });
     }
 
@@ -314,23 +318,24 @@ try {
       }
     );
 
-
     const base64Image = req.file.buffer.toString("base64");
 
     const referenceUrl = reference.url;
 
     // referenceUrl says localhost, must fix
-    const internalReferenceUrl = referenceUrl.replace("localhost:9000", "minio:9000");
+    const internalReferenceUrl = referenceUrl.replace(
+      "localhost:9000",
+      "minio:9000"
+    );
 
-    const fetch = await import('node-fetch');
+    const fetch = await import("node-fetch");
     const referenceResponse = await fetch.default(internalReferenceUrl);
     const referenceBuffer = await referenceResponse.arrayBuffer();
 
-    const base64Reference = Buffer.from(referenceBuffer).toString('base64');
+    const base64Reference = Buffer.from(referenceBuffer).toString("base64");
     const prompt = [
       {
-        text:
-          `You've been given a drawing user ${username} has made & reference image. They are working on going from reference image to their own image through understanding the basic shapes of the original image. Your job is to provide helpful feedback the user can use to improve their art. Be extremely friendly and nice. The user will not prompt you for additional advice, so you need to be comprehensive in one response. Make sure to compare the user's drawing to the reference image. The closer the user is to the refernence, the better.`
+        text: `You've been given a drawing user ${username} has made & reference image. They are working on going from reference image to their own image through understanding the basic shapes of the original image. Your job is to provide helpful feedback the user can use to improve their art. Be extremely friendly and nice. The user will not prompt you for additional advice, so you need to be comprehensive in one response. Make sure to compare the user's drawing to the reference image. The closer the user is to the refernence, the better.`
       },
       {
         inlineData: {
@@ -358,7 +363,7 @@ try {
     let feedback = "";
 
     for (const part of response.candidates[0].content.parts) {
-      if(part.text) {
+      if (part.text) {
         feedback = part.text;
         break;
       }
@@ -411,6 +416,180 @@ try {
   }
 });
 
+// live feedback endpoint for real-time drawing guidance
+server.post("/live_feedback", async (req, res) => {
+  try {
+    const { canvasData, referenceId, conversationHistory = [] } = req.body;
+
+    if (!canvasData) {
+      return res.status(400).json({ error: "Canvas data is required" });
+    }
+
+    if (!referenceId) {
+      return res.status(400).json({ error: "Reference ID is required" });
+    }
+
+    // Get reference from database
+    const reference = await prisma.reference.findUnique({
+      where: { id: parseInt(referenceId) }
+    });
+
+    if (!reference) {
+      return res.status(404).json({ error: "Reference not found" });
+    }
+
+    // Extract base64 data from canvas (remove data:image/png;base64, prefix)
+    const base64Canvas = canvasData.split(",")[1];
+    if (!base64Canvas) {
+      return res.status(400).json({ error: "Invalid canvas data format" });
+    }
+
+    // Get reference image as base64
+    // Fix URL for internal Docker network access
+    console.log("Original reference URL:", reference.url);
+    let internalReferenceUrl = reference.url.replace(
+      "localhost:9000",
+      "minio:9000"
+    );
+
+    // Try multiple URL transformation strategies
+    if (internalReferenceUrl === reference.url) {
+      // If localhost:9000 replacement didn't work, try other patterns
+      internalReferenceUrl = reference.url.replace(
+        "127.0.0.1:9000",
+        "minio:9000"
+      );
+    }
+    if (internalReferenceUrl === reference.url) {
+      // If no replacement worked, try force replacing the host
+      internalReferenceUrl = reference.url.replace(
+        /https?:\/\/[^\/]+/,
+        "http://minio:9000"
+      );
+    }
+
+    const fetch = await import("node-fetch");
+    let base64Reference;
+
+    try {
+      const referenceResponse = await fetch.default(internalReferenceUrl);
+      const referenceBuffer = await referenceResponse.arrayBuffer();
+      base64Reference = Buffer.from(referenceBuffer).toString("base64");
+    } catch (fetchError) {
+      // Try fallback strategies
+      const fallbackUrls = [
+        reference.url.replace(/https?:\/\/[^:]+:\d+/, "http://minio:9000"),
+        reference.url.replace(/https?:\/\/[^:]+:\d+/, "http://localhost:9000"),
+        reference.url.replace(/https?:\/\/[^:]+:\d+/, "http://127.0.0.1:9000")
+      ];
+
+      let lastError = fetchError;
+      let success = false;
+
+      for (const fallbackUrl of fallbackUrls) {
+        try {
+          const fallbackResponse = await fetch.default(fallbackUrl);
+          const referenceBuffer = await fallbackResponse.arrayBuffer();
+          base64Reference = Buffer.from(referenceBuffer).toString("base64");
+          success = true;
+          break;
+        } catch (fallbackError) {
+          lastError = fallbackError;
+        }
+      }
+
+      // If all fallbacks failed, throw the last error
+      if (!success) {
+        throw lastError;
+      }
+    }
+
+    // Create conversational context
+    const conversationContext =
+      conversationHistory.length > 0
+        ? `Previous feedback given: ${conversationHistory
+            .slice(-3)
+            .join(" | ")}`
+        : "This is the first feedback for this drawing session.";
+
+    // Build prompt for live feedback
+    const prompt = [
+      {
+        text: `You are Shelly, a friendly and encouraging art mentor providing live drawing feedback.
+               Give brief, specific, and supportive advice in 1-2 sentences maximum.
+               Be conversational and upbeat like a helpful friend.
+               Compare their current progress to the reference image and help them improve.
+               Focus on what they're doing well and give gentle guidance for improvement.
+               ${conversationContext}
+               Avoid repeating previous advice unless they really need to hear it again.
+               Keep responses short and sweet for speech bubble display.`
+      },
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Canvas
+        }
+      },
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Reference
+        }
+      }
+    ];
+
+    // Call Gemini API
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: prompt
+    });
+
+    let feedback = "";
+    for (const part of response.candidates[0].content.parts) {
+      if (part.text) {
+        feedback = part.text;
+        break;
+      }
+    }
+
+    // Simple similarity check to avoid repetitive feedback
+    const shouldSpeak = !conversationHistory.some(prev => {
+      const similarity =
+        feedback.toLowerCase().includes(prev.toLowerCase().slice(0, 20)) ||
+        prev.toLowerCase().includes(feedback.toLowerCase().slice(0, 20));
+      return similarity;
+    });
+
+    res.json({
+      feedback,
+      shouldSpeak,
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error("Error generating live feedback:", error);
+
+    if (error.message && error.message.includes("API key")) {
+      return res.status(401).json({
+        error: "API key error",
+        details: "Please check your GEMINI_API_KEY environment variable"
+      });
+    }
+
+    if (error.message && error.message.includes("quota")) {
+      return res.status(429).json({
+        error: "API quota exceeded",
+        details: "Gemini API quota has been exceeded"
+      });
+    }
+
+    res.status(500).json({
+      error: "Failed to generate live feedback",
+      details: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
+  }
+});
+
 // this endpoint retrieves all the images an authenticated user has
 server.get("/gallery", async (req, res) => {
   try {
@@ -428,13 +607,13 @@ server.get("/gallery", async (req, res) => {
 
     const drawings = await prisma.drawing.findMany({
       where: {
-        user_id: userId,
+        user_id: userId
       },
       include: {
-        reference: true, // Include the associated reference
+        reference: true // Include the associated reference
       },
       orderBy: {
-        created_at: 'desc' // Most recent first
+        created_at: "desc" // Most recent first
       }
     });
 

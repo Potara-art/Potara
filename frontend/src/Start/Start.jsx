@@ -2,6 +2,9 @@ import Header from '../components/Header'
 import React, { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer'
 import Canvas from './canvas.jsx'
+import Shelly from '../components/Shelly.jsx'
+import { useAuth } from '../contexts/AuthContext.jsx'
+import { useNavigate } from 'react-router-dom'
 
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
@@ -14,12 +17,96 @@ import heart from '../assets/heart.png'
 import { Commet } from 'react-loading-indicators';
 
 
-function Start() 
+function Start()
 {
+  const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const [uploadedImage, setUploadedImage] = useState(null); // raw image preview
-  const [processedImage, setProcessedImage] = useState(null); // response from API
-
+  const [referenceData, setReferenceData] = useState(null); // response from API containing all image URLs
+  const [currentImageType, setCurrentImageType] = useState('original'); // 'original', 'shapes', 'outlines'
   const [isLoading, checkIsLoading] = useState(false);
+
+  // Live feedback state
+  const [shellyFeedback, setShellyFeedback] = useState('');
+  const [showShelly, setShowShelly] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [isLoadingFeedback, setIsLoadingFeedback] = useState(false);
+
+  // Helper function to get current image URL based on selected type
+  const getCurrentImageUrl = () => {
+    if (!referenceData) return null;
+    switch (currentImageType) {
+      case 'original':
+        return referenceData.originalImageUrl;
+      case 'shapes':
+        return referenceData.shapeImageUrl;
+      case 'outlines':
+        return referenceData.outlineImageUrl;
+      default:
+        return referenceData.originalImageUrl;
+    }
+  };
+
+  // Live feedback functions
+  const handleInactivityTimeout = async (canvasData) => {
+    if (!referenceData || isLoadingFeedback) {
+      return;
+    }
+
+    setIsLoadingFeedback(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+      const requestBody = {
+        canvasData,
+        referenceId: referenceData.referenceId,
+        conversationHistory
+      };
+
+      const response = await fetch(`${API_BASE_URL}/live_feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to get live feedback: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.shouldSpeak && data.feedback) {
+        setShellyFeedback(data.feedback);
+        setShowShelly(true);
+
+        // Add to conversation history (keep last 5 messages)
+        setConversationHistory(prev => [...prev.slice(-4), data.feedback]);
+      }
+    } catch (error) {
+      console.error('Live feedback error:', error);
+    } finally {
+      setIsLoadingFeedback(false);
+    }
+  };
+
+  const handleCanvasActivity = () => {
+    // Reset Shelly when user is actively drawing
+    if (showShelly) {
+      setShowShelly(false);
+    }
+  };
+
+  const handleShellyFeedbackComplete = () => {
+    setShellyFeedback('');
+  };
+
+  // Show Shelly when we have reference data and user is authenticated
+  const shouldShowShelly = isAuthenticated && referenceData && !isLoading;
+
   const handleImageUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -33,9 +120,11 @@ function Start()
     const formData = new FormData();
     formData.append('image', file); // name must match backend expectations
 
-    const response = await fetch('processedImageUrl', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    const response = await fetch(`${API_BASE_URL}/upload_ref`, {
       method: 'POST',
       body: formData,
+      credentials: 'include'
     });
 
     if (!response.ok) {
@@ -43,10 +132,13 @@ function Start()
     }
 
     const data = await response.json();
-    setProcessedImage(data.processedImageUrl);
+    setReferenceData(data);
+    setCurrentImageType('original');
 
   } catch (error) {
     console.error('Upload error:', error);
+  } finally {
+    checkIsLoading(false);
   }
 };
 
@@ -57,53 +149,145 @@ function Start()
       <main className="">
         <div className="min-h-screen flex justify-center bg-beige mt-20">
           <div className="text-center relative">
-            {!uploadedImage && (
+            {!isAuthenticated ? (
+              // Authentication required content
               <>
                 <img className="absolute left-[60px] animate-tilt-snap-2 -top-24" src={spark} alt="" />
                 <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-0">
                   Learn to draw any image by breaking it down into its{" "}
                   <span className="awesome-blue">simplest</span> shapes!
                 </p>
+
+                <div className="bg-white rounded-4xl p-12 max-w-2xl mx-auto shadow-lg">
+                  <h2 className="font-unkempt text-4xl almost-black mb-6">
+                    Create an account to get started!
+                  </h2>
+                  <p className="text-xl text-gray-700 mb-8 font-medium">
+                    Sign up to upload images, get AI-powered drawing guides, and track your progress.
+                  </p>
+
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={() => navigate('/sign-up')}
+                      className="bg-[#EB9191] hover:bg-awesomeblue text-white font-unkempt text-xl px-6 py-2 rounded-2xl shadow-md transition transition-transform duration-200 ease-in-out transform hover:scale-105 cursor-pointer"
+                    >
+                      Sign Up
+                    </button>
+                    <button
+                      onClick={() => navigate('/log-in')}
+                      className="bg-[#EB9191] hover:bg-awesomeblue text-white font-unkempt text-xl px-6 py-2 rounded-2xl shadow-md transition transition-transform duration-200 ease-in-out transform hover:scale-105 cursor-pointer"
+                    >
+                      Log In
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Authenticated user content (existing functionality)
+              <>
+                {!uploadedImage && (
+                  <>
+                    <img className="absolute left-[60px] animate-tilt-snap-2 -top-24" src={spark} alt="" />
+                    <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-0">
+                      Learn to draw any image by breaking it down into its{" "}
+                      <span className="awesome-blue">simplest</span> shapes!
+                    </p>
+                  </>
+                )}
+
+                {/* Hidden file input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="uploadInput"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+
+                {!uploadedImage ? (
+                  <label htmlFor="uploadInput" className="cursor-pointer inline-block">
+                    <img className="w-[900px] h-auto" src={uploadImage} alt="Upload an image" />
+                  </label>
+                ) : (
+                  <div className="flex flex-row gap-8 max-w-[1400px] mx-auto">
+                    {/* Reference Image Column */}
+                    <div className="flex flex-col !justify-start gap-5 min-w-[400px]">
+                      {isLoading ? (
+                        <div className="w-[400px] h-[400px] flex flex-col justify-center items-center">
+                          <Commet color="#FFFFFF" size="medium" text="" textColor="" />
+                          <p className='text-3xl mt-10'>Processing Image...</p>
+                        </div>
+                      ) : (
+                        referenceData && (
+                          <>
+                            <img
+                              className="w-[400px] h-auto block mx-auto"
+                              src={getCurrentImageUrl()}
+                              alt={`${currentImageType} Image`}
+                            />
+                            {/* Image cycling controls */}
+                            <div className="flex justify-center gap-3 mt-4">
+                              <button
+                                onClick={() => setCurrentImageType('original')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors font-unkempt ${
+                                  currentImageType === 'original'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                Original
+                              </button>
+                              <button
+                                onClick={() => setCurrentImageType('shapes')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors font-unkempt ${
+                                  currentImageType === 'shapes'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                Shapes Guide
+                              </button>
+                              <button
+                                onClick={() => setCurrentImageType('outlines')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors font-unkempt ${
+                                  currentImageType === 'outlines'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                              >
+                                Outlines Guide
+                              </button>
+                            </div>
+                          </>
+                        )
+                      )}
+                    </div>
+
+                    {/* Canvas Column */}
+                    <div className="flex-1">
+                      <Canvas
+                        referenceData={referenceData}
+                        currentImageType={currentImageType}
+                        onActivityUpdate={handleCanvasActivity}
+                        onInactivityTimeout={handleInactivityTimeout}
+                      />
+                    </div>
+
+                    {/* Shelly Column */}
+                    {shouldShowShelly && (
+                      <div className="w-[300px] h-[600px] flex flex-col">
+                        <Shelly
+                          feedback={shellyFeedback}
+                          isVisible={shouldShowShelly}
+                          onFeedbackComplete={handleShellyFeedbackComplete}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
-
-            {/* Hidden file input */}
-            <input
-              type="file"
-              accept="image/*"
-              id="uploadInput"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-
-            {!uploadedImage ? (
-              <label htmlFor="uploadInput" className="cursor-pointer inline-block">
-                <img className="w-[900px] h-auto" src={uploadImage} alt="Upload an image" />
-              </label>
-            ) : (
-              <div className="flex flex-row gap-15">
-                <div className="flex flex-col !justify-start gap-5">
-                  {isLoading ? (
-                    <div className="w-[520px] h-[520px] flex flex-col justify-center items-center">
-                      <Commet color="#FFFFFF" size="medium" text="" textColor="" />
-                      <p className='text-4xl mt-10'>Processing Image...</p>
-                    </div>
-                  ) : (
-                    processedImage && (
-                      <img
-                        className="w-[520px] h-auto block ml-0"
-                        src={processedImage}
-                        alt="Processed Image"
-                      />
-                    )
-                  )}
-                </div>
-                <Canvas></Canvas>
-              </div>
-            )}
           </div>
-
-
         </div>
 
         {/* instructions bar */}

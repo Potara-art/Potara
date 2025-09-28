@@ -52,7 +52,7 @@ function SignUp() {
 
       {/* Close button (top-right) */}
       <a
-        href="/start"
+        href="/"
         className="absolute top-1 right-8 text-white text-7xl font-bold hover:text-gray-200 transition"
       >
         ×
