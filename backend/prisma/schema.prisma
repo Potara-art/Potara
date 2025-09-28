@@ -15,32 +15,32 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String
-  email     String   @unique
+  id            Int         @id @default(autoincrement())
+  username      String
+  email         String      @unique
   password_hash String
-  references Reference[]
-  drawings Drawing[]
-  created_at DateTime @default(now())
+  references    Reference[]
+  drawings      Drawing[]
+  created_at    DateTime    @default(now())
 }
 
 model Reference {
-  id Int  @id @default(autoincrement())
-  url String
-  shape_url String
-  user User @relation(fields: [user_id], references: [id])
-  user_id Int
-  drawings Drawing[]
-  created_at DateTime @default(now())
+  id         Int       @id @default(autoincrement())
+  url        String
+  shape_url  String
+  user       User      @relation(fields: [user_id], references: [id])
+  user_id    Int
+  drawings   Drawing[]
+  created_at DateTime  @default(now())
 }
 
 model Drawing {
-  id Int @id @default(autoincrement())
-  url String
-  user User @relation(fields: [user_id], references: [id])
-  user_id Int
-  reference Reference @relation(fields: [reference_id], references: [id])
+  id           Int       @id @default(autoincrement())
+  url          String
+  user         User      @relation(fields: [user_id], references: [id])
+  user_id      Int
+  reference    Reference @relation(fields: [reference_id], references: [id])
   reference_id Int
-  feedback String
-  created_at DateTime @default(now())
+  feedback     String
+  created_at   DateTime  @default(now())
 }
