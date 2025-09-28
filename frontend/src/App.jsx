@@ -60,11 +60,13 @@ function App()
         />
 
         <button
-          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-gray-200 transition font-unkempt"
+          className="px-8 py-5 bg-white text-black text-4xl rounded-3xl shadow-md hover:bg-sillyyellow
+                    transition-transform duration-200 ease-in-out transform hover:scale-105 font-unkempt cursor-pointer"
           onClick={() => navigate('/start')}
         >
           Get Started
         </button>
+
 
       </div>
 
