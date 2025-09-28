@@ -7,6 +7,7 @@ import swirl from './assets/swirl.png'
 import heart from './assets/heart.png'
 import squiggle from './assets/Squiggle.svg'
 import Header from './components/Header'
+import Footer from './components/Footer'
 
 function App() 
 {
