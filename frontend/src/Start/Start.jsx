@@ -16,7 +16,6 @@ import { Commet } from 'react-loading-indicators';
 
 function Start() 
 {
-  
   const [uploadedImage, setUploadedImage] = useState(null); // raw image preview
   const [processedImage, setProcessedImage] = useState(null); // response from API
 
