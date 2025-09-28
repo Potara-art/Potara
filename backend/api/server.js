@@ -173,9 +173,20 @@ const generateImageUrl = async (response, timestamp, req, type) => {
 
 // this endpoint expects a reference image and will then draw shapes for the user to reference
 server.post("/upload_ref", upload.single("image"), async (req, res) => {
-  try {
+  try {    
     if (!req.file) {
       return res.status(400).json({ error: "No image file provided" });
+    }
+
+    let userId = null;
+    try {
+      const token = req.cookies.auth_token;
+      if (token) {
+        const decoded = verifyToken(token);
+        userId = decoded.userId;
+      }
+    } catch (err) {
+      console.log("No valid authentication token");
     }
 
     // Upload original image to MinIO
@@ -207,12 +218,24 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
     // Generate direct URL for the original image
     const originalImageUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${originalFileName}`;
 
+    // save reference to db (needed for feedback)
+    referenceDb = await prisma.reference.create({
+      data: {
+        url: originalImageUrl,
+        shape_url: shapeUrl,
+        outline_url: outlineUrl,
+        user_id: userId
+      }
+    });
+    
+
     res.json({
       success: true,
       message: "Image processed successfully",
       originalImageUrl: originalImageUrl,
       shapeImageUrl: shapeUrl,
       outlineImageUrl: outlineUrl,
+      referenceId: referenceDb.id,
       filename: originalFileName
     });
   } catch (error) {
@@ -240,9 +263,152 @@ server.post("/upload_ref", upload.single("image"), async (req, res) => {
   }
 });
 
-// this endpoint expects a drawn image and will create feedback based on it
+// this endpoint expects a drawn image and the url to the original reference and will create feedback based on it
 server.post("/upload_img", upload.single("image"), async (req, res) => {
-  
+try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image file provided" });
+    }
+
+    const { referenceId } = req.body;
+    if(!referenceId) {
+      return res.status(400).json({ error: "Reference ID not provided" });
+    }
+
+    let userId = null;
+    let username = "Artist";
+    try {
+      const token = req.cookies.auth_token;
+      if (token) {
+        const decoded = verifyToken(token);
+        userId = decoded.userId;
+
+        const user = await prisma.user.findUnique({
+          where: { id: userId }
+        });
+        if (user) {
+          username = user.username;
+        }
+      }
+    } catch (err) {
+      console.log("No valid authentication token");
+    }
+
+    const reference = await prisma.reference.findUnique({ where: {id: parseInt(referenceId) }});
+
+    if(!reference) {
+      return res.status(404).json({ error: "Reference not found" });
+    }
+
+    // Upload drawing to MinIO
+    const timestamp = Date.now();
+    const drawingFileName = `uploads/${timestamp}-${req.file.originalname}`;
+
+    await minioClient.putObject(
+      BUCKET_NAME,
+      drawingFileName,
+      req.file.buffer,
+      req.file.buffer.length,
+      {
+        "Content-Type": req.file.mimetype
+      }
+    );
+
+
+    const base64Image = req.file.buffer.toString("base64");
+
+    const referenceUrl = reference.url;
+
+    // referenceUrl says localhost, must fix
+    const internalReferenceUrl = referenceUrl.replace("localhost:9000", "minio:9000");
+
+    const fetch = await import('node-fetch');
+    const referenceResponse = await fetch.default(internalReferenceUrl);
+    const referenceBuffer = await referenceResponse.arrayBuffer();
+
+    const base64Reference = Buffer.from(referenceBuffer).toString('base64');
+    const prompt = [
+      {
+        text:
+          `You've been given a drawing user ${username} has made & reference image. They are working on going from reference image to their own image through understanding the basic shapes of the original image. Your job is to provide helpful feedback the user can use to improve their art. Be extremely friendly and nice. The user will not prompt you for additional advice, so you need to be comprehensive in one response. Make sure to compare the user's drawing to the reference image. The closer the user is to the refernence, the better.`
+      },
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Image
+        }
+      },
+      {
+        inlineData: {
+          mimeType: "image/png",
+          data: base64Reference
+        }
+      }
+    ];
+
+    console.log("Sending request to Gemini API...");
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-image-preview",
+      contents: prompt
+    });
+
+    console.log("Received response from Gemini API");
+    console.log("Response structure:", JSON.stringify(response, null, 2));
+
+    let feedback = "";
+
+    for (const part of response.candidates[0].content.parts) {
+      if(part.text) {
+        feedback = part.text;
+        break;
+      }
+    }
+
+    // Generate direct URL for the drawn image
+    const drawingUrl = `${MINIO_PUBLIC_URL}/${BUCKET_NAME}/${drawingFileName}`;
+
+    // save to db if logged in
+    if (userId) {
+      await prisma.drawing.create({
+        data: {
+          url: drawingUrl,
+          user_id: userId,
+          reference_id: parseInt(referenceId),
+          feedback: feedback
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Image processed successfully",
+      drawingUrl: drawingUrl,
+      feedback: feedback,
+      saved: userId !== null
+    });
+  } catch (error) {
+    console.error("Error processing image:", error);
+
+    if (error.message && error.message.includes("API key")) {
+      return res.status(401).json({
+        error: "API key error",
+        details: "Please check your GEMINI_API_KEY environment variable"
+      });
+    }
+
+    if (error.message && error.message.includes("quota")) {
+      return res.status(429).json({
+        error: "API quota exceeded",
+        details: "Gemini API quota has been exceeded"
+      });
+    }
+
+    res.status(500).json({
+      error: "An error occurred while processing the image",
+      details: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+    });
+  }
 });
 
 server.post("/auth/register", async (req, res) => {
