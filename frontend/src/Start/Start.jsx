@@ -12,25 +12,93 @@ import heart from '../assets/heart.png'
 
 function Start() 
 {
+  
+  const [uploadedImage, setUploadedImage] = useState(null); // raw image preview
+  const [processedImage, setProcessedImage] = useState(null); // response from API
+
+  const handleImageUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file); // name must match backend expectations
+
+    const response = await fetch('processedImageUrl', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload and process image');
+    }
+
+    // Option 1: if backend returns a base64 string or image URL
+    const data = await response.json();
+    setProcessedImage(data.processedImageUrl);
+
+    // Option 2: if backend returns a blob:
+    // const blob = await response.blob();
+    // setProcessedImage(URL.createObjectURL(blob));
+  } catch (error) {
+    console.error('Upload error:', error);
+  }
+};
+
+
   return (
     <>
       <Header />
-
-      {/* Push content below fixed header height (match your header h-20) */}
       <main className="">
-        {/* hero */}
         <div className="min-h-screen flex justify-center bg-beige mt-20">
           {/* anchor spark to this box */}
           <div className="text-center relative">
-            <img className="absolute left-[60px] animate-tilt-snap-2 -top-24" src={spark} alt="" />
-            <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-0">
-              Learn to draw any image by breaking it down into its{" "}
-              <span className="awesome-blue">simplest</span> shapes!
-            </p>
-            <a href="https://youtu.be/U3HGfwDjX0g?si=IX3h3JMtmM0-tcZ0">
-              <img className="w-[900px] h-auto" src={uploadImage} alt="Tutorial" />
-            </a>
-          </div>
+  {/* Only show this stuff if no image is uploaded */}
+  {!uploadedImage && (
+    <>
+      <img className="absolute left-[60px] animate-tilt-snap-2 -top-24" src={spark} alt="" />
+      <p className="font-unkempt text-5xl almost-black max-w-xl mx-auto mb-12 mt-0">
+        Learn to draw any image by breaking it down into its{" "}
+        <span className="awesome-blue">simplest</span> shapes!
+      </p>
+    </>
+  )}
+
+  {/* Hidden file input */}
+  <input
+    type="file"
+    accept="image/*"
+    id="uploadInput"
+    onChange={handleImageUpload}
+    className="hidden"
+  />
+
+  {!uploadedImage ? (
+  <label htmlFor="uploadInput" className="cursor-pointer inline-block">
+    <img className="w-[900px] h-auto" src={uploadImage} alt="Upload an image" />
+  </label>
+) : (
+  <div className='flex flex-row gap-15'>
+    <div className='flex flex-col !justify-start gap-5'>
+      {/* Show processed image if available */}
+      {processedImage ? (
+        <img
+          className="w-[520px] h-auto block ml-0"
+          src={processedImage}
+          alt="Processed Image"
+        />
+      ) : (
+        <p className="text-lg text-gray-500">Processing image...</p>
+      )}
+    </div>
+    
+    {/* This will be the canvas (can update later to draw over the processed image) */}
+    <div className='w-[750px] bg-white rounded-4xl h-[650px]'></div>
+  </div>
+)}
+
+</div>
+h
         </div>
 
         {/* instructions bar */}
