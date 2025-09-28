@@ -49,7 +49,7 @@ function Start()
   };
 
   // Live feedback functions
-  const handleInactivityTimeout = async (canvasData) => {
+  const handlePeriodicCanvasCheck = async (canvasData) => {
     if (!referenceData || isLoadingFeedback) {
       return;
     }
@@ -281,8 +281,9 @@ const handleSaveToGallery = async (imageData) => {
                         referenceData={referenceData}
                         currentImageType={currentImageType}
                         onActivityUpdate={handleCanvasActivity}
-                        onInactivityTimeout={handleInactivityTimeout}
+                        onPeriodicCheck={handlePeriodicCanvasCheck}
                         onSaveToGallery={handleSaveToGallery}
+                        isShellyTalking={showShelly && shellyFeedback !== ''}
                       />
                     </div>
 

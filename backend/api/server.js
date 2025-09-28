@@ -502,7 +502,16 @@ server.post("/live_feedback", async (req, res) => {
                Focus on what they're doing well and give gentle guidance for improvement.
                ${conversationContext}
                Avoid repeating previous advice unless they really need to hear it again.
-               Keep responses short and sweet for speech bubble display.`
+               Keep responses short and sweet for speech bubble display.
+               
+               You have been given two images, one is the canvas, which comes from the user, the other
+               is a reference. Ensure that you do not get them mixed up, you are providing feedback on
+               the canvas image, NOT the reference image.
+
+               Make sure to look at the whole image when it comes to the canvas.
+
+               If you see the user has implemented feedback you suggested, commend them on that.
+               `
       },
       {
         inlineData: {
