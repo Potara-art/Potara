@@ -99,8 +99,7 @@ function Start()
                     )
                   )}
                 </div>
-
-                <div className="w-[750px] bg-white rounded-4xl h-[650px]"></div>
+                <Canvas></Canvas>
               </div>
             )}
           </div>
