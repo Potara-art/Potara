@@ -8,7 +8,7 @@ import { getGalleryImages } from '../utils/api';
 function Gallery() {
   const [gallery, setGallery] = useState([]);
   const [loading, setLoading] = useState(true);
-  const MIN_SLOTS = 4;
+  const MIN_SLOTS = 0;
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -56,29 +56,30 @@ function Gallery() {
             </p>
 
             {/* Grid: 1/2/3/4 columns by breakpoint; rows auto-add when items > columns */}
+            {/* Grid: 1/2/3/4 columns by breakpoint; rows auto-add when items > columns */}
             {loading ? (
               <p className="text-center">Loading gallery...</p>
+            ) : gallery.length === 0 ? (
+              <p className="text-center almost-black mt-50">Nothing in the gallery.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {Array.from({ length: totalSlots }).map((_, i) => {
-                  const item = gallery[i];
-                  return (
-                    <div
-                      key={i}
-                      className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full h-56 overflow-hidden"
-                    >
-                      {item ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.title || 'Gallery item'}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : null}
-                    </div>
-                  );
-                })}
+                {gallery.map((item, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl border border-gray-200 shadow-sm w-full h-56 overflow-hidden"
+                  >
+                    {item ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title || 'Gallery item'}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                ))}
               </div>
             )}
+
           </div>
         </section>
       </main>

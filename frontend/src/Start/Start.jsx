@@ -330,8 +330,8 @@ const handleSaveToGallery = async (imageData) => {
 
           <div className="bg-white h-[400px] w-2/3 rounded-4xl p-8 text-center flex flex-col justify-center items-center">
             <h1 className="almost-black font-unkempt text-4xl mb-5">
-              3. Draw those shapes, and upload the finished result to receive{" "}
-              <span className="awesome-blue">valuable feedback</span> to improve your drawings!
+              3. Draw those shapes, make the drawing your own, and receive{" "}
+              <span className="awesome-blue">valuable feedback</span> to improve your art!
             </h1>
             <img className="max-w-1/4 place-self-center" src={bird2} alt="Feedback step" />
           </div>
