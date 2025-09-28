@@ -1,23 +1,39 @@
-// src/pages/Canvas.jsx (same folder as Start.jsx)
+// src/pages/Canvas.jsx
 import React, { useRef, useState, useEffect } from 'react';
+import potaraLogo from '../assets/potara-symbol.png'; // adjust if your path differs
 
-export default function Canvas() 
-{
+export default function Canvas() {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const [currentColor, setCurrentColor] = useState('#000000');
   const [brushSize, setBrushSize] = useState(5);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [tool, setTool] = useState('pen'); // 'pen' | 'eraser'
 
-  const colors = ['#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00','#FF00FF','#00FFFF','#FFA500','#800080','#A52A2A','#808080'];
+  const CURSOR_MAX_PX = 32;        // smaller cursor (try 24–40)
+  const HOTSPOT_X_PCT = 0.18;      // 0 = far left, 1 = far right   (smaller -> image moves RIGHT)
+  const HOTSPOT_Y_PCT = 0.58;      // 0 = top,     1 = bottom       (larger  -> image moves UP)
 
-  // Initialize canvas
+  const colors = [
+    '#000000', // Black
+    '#FFFFFF', // White
+    '#808080', // Gray
+    '#FF0000', // Red
+    '#FFA500', // Orange
+    '#FFFF00', // Yellow
+    '#00FF00', // Green
+    '#0000FF', // Blue
+    '#A020F0', // Purple
+    '#FF8DA1', // Pink
+    '#895129', // Brown
+  ];
+
+  // Initialize canvas/context
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // Set size explicitly so drawing is crisp
     canvas.width = 800;
     canvas.height = 500;
 
@@ -29,20 +45,53 @@ export default function Canvas()
     fabricCanvasRef.current = { canvas, ctx };
   }, []);
 
-  // Update brush properties
+  // Set custom cursor (scaled + hotspot)
+useEffect(() => {
+  const el = canvasRef.current;
+  if (!el) return;
+
+  const img = new Image();
+  img.src = potaraLogo; // make sure this import is correct
+  img.onload = () => {
+    // scale down to keep browsers happy
+    const scale = Math.min(CURSOR_MAX_PX / img.width, CURSOR_MAX_PX / img.height, 1);
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    off.getContext('2d').drawImage(img, 0, 0, w, h);
+
+    const url = off.toDataURL('image/png');
+
+    // hotspot inside the image (in pixels)
+    const hotspotX = Math.round(w * HOTSPOT_X_PCT);
+    const hotspotY = Math.round(h * HOTSPOT_Y_PCT);
+
+    el.style.cursor = `url(${url}) ${hotspotX} ${hotspotY}, crosshair`;
+  };
+}, []);
+
+  // Update brush properties when color/size changes
   useEffect(() => {
-    if (fabricCanvasRef.current) {
-      const { ctx } = fabricCanvasRef.current;
-      ctx.strokeStyle = currentColor;
-      ctx.lineWidth = brushSize;
-    }
+    if (!fabricCanvasRef.current) return;
+    const { ctx } = fabricCanvasRef.current;
+    ctx.strokeStyle = currentColor;
+    ctx.lineWidth = brushSize;
   }, [currentColor, brushSize]);
 
   const startDrawing = (e) => {
     if (!fabricCanvasRef.current) return;
     setIsDrawing(true);
+
     const { canvas, ctx } = fabricCanvasRef.current;
     const rect = canvas.getBoundingClientRect();
+
+    // Set composite mode at the start of each stroke
+    ctx.globalCompositeOperation =
+      tool === 'eraser' ? 'destination-out' : 'source-over';
+
     ctx.beginPath();
     ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
   };
@@ -63,21 +112,42 @@ export default function Canvas()
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
+  const downloadPNG = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = 'drawing.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  const toggleEraser = () => {
+    setTool((t) => (t === 'eraser' ? 'pen' : 'eraser'));
+  };
+
   return (
-    // Keep this wrapper small and above any absolute decorations
     <div className="relative z-10 mx-auto w-full max-w-[900px] px-4">
       {/* Toolbar */}
       <div className="rounded-xl border border-gray-200 bg-white/90 p-4 shadow-sm mb-3">
         <div className="flex items-center gap-6 flex-wrap">
           {/* Color Palette */}
           <div>
-            <span className="text-sm font-medium text-gray-600 mb-2 block">Colors:</span>
+            <span className="text-sm font-medium text-gray-600 mb-2 block font-unkempt">
+              Colors:
+            </span>
             <div className="flex gap-2 flex-wrap">
               {colors.map((color) => (
                 <button
                   key={color}
-                  onClick={() => setCurrentColor(color)}
-                  className={`w-6 h-6 rounded border-2 ${currentColor === color ? 'border-gray-800' : 'border-gray-300 hover:border-gray-500'}`}
+                  onClick={() => {
+                    setCurrentColor(color);
+                    setTool('pen');
+                  }}
+                  className={`w-6 h-6 rounded border-2 ${
+                    currentColor === color && tool === 'pen'
+                      ? 'border-gray-800'
+                      : 'border-gray-300 hover:border-gray-500'
+                  }`}
                   style={{ backgroundColor: color }}
                   aria-label={`Pick ${color}`}
                 />
@@ -87,27 +157,52 @@ export default function Canvas()
 
           {/* Brush Size */}
           <div>
-            <span className="text-sm font-medium text-gray-600 mb-2 block">Brush Size:</span>
+            <span className="text-sm font-medium text-gray-600 mb-2 block font-unkempt">
+              Brush Size:
+            </span>
             <div className="flex items-center gap-2">
-              <input type="range" min="1" max="30" value={brushSize} onChange={(e) => setBrushSize(Number(e.target.value))} className="w-24" />
-              <span className="text-sm text-gray-500 w-10">{brushSize}px</span>
+              <input
+                type="range"
+                min="1"
+                max="30"
+                value={brushSize}
+                onChange={(e) => setBrushSize(Number(e.target.value))}
+                className="w-24"
+              />
+              <span className="text-sm text-gray-500 w-10 font-unkempt">
+                {brushSize}px
+              </span>
             </div>
           </div>
 
-          {/* Current Color */}
-          <div>
-            <span className="text-sm font-medium text-gray-600 mb-2 block">Current:</span>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded border border-gray-300" style={{ backgroundColor: currentColor }} />
-              <span className="text-sm text-gray-500">{currentColor}</span>
-            </div>
-          </div>
+          {/* Buttons: Eraser, Clear, Download */}
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              onClick={toggleEraser}
+              className={`px-3 py-2 rounded-lg border ${
+                tool === 'eraser'
+                  ? 'bg-[#EB9191] text-white border-gray-900 font-unkempt'
+                  : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50 font-unkempt'
+              }`}
+              title="Toggle Eraser"
+            >
+              Eraser
+            </button>
 
-          {/* Clear */}
-          <div className="ml-auto">
-            <span className="text-sm font-medium text-gray-600 mb-2 block">&nbsp;</span>
-            <button onClick={clearCanvas} className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+            <button
+              onClick={clearCanvas}
+              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-unkempt"
+              title="Clear"
+            >
               Clear
+            </button>
+
+            <button
+              onClick={downloadPNG}
+              className="px-3 py-2 rounded-lg border bg-black text-white border-gray-300 hover:bg-gray-700 font-unkempt"
+              title="Download PNG"
+            >
+              Download
             </button>
           </div>
         </div>
@@ -119,7 +214,7 @@ export default function Canvas()
           ref={canvasRef}
           width={800}
           height={500}
-          className="block w-full h-auto cursor-crosshair"
+          className="block w-full h-auto" // intentionally no Tailwind cursor-* here
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -127,7 +222,10 @@ export default function Canvas()
         />
       </div>
 
-      <p className="text-xs text-gray-500 mt-2 text-center">Select a color and brush size, then draw on the canvas.</p>
+      <p className="text-xs text-gray-500 mt-2 mb-8 text-center">
+        Pick a color to draw. Toggle Eraser to remove mistakes. Clear to restart.
+        Download to save your masterpiece!
+      </p>
     </div>
   );
 }
