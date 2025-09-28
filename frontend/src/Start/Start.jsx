@@ -1,7 +1,6 @@
 import Header from '../components/Header'
-
+import React, { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer'
-
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
 import squiggle from '../assets/Squiggle.svg'
