@@ -411,6 +411,56 @@ try {
   }
 });
 
+// this endpoint retrieves all the images an authenticated user has
+server.get("/gallery", async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+    let userId = null;
+
+    if (!token) {
+      return res.status(401).json({
+        error: "User not authenticated"
+      });
+    }
+
+    const decoded = verifyToken(token);
+    userId = decoded.userId;
+
+    const drawings = await prisma.drawing.findMany({
+      where: {
+        user_id: userId,
+      },
+      include: {
+        reference: true, // Include the associated reference
+      },
+      orderBy: {
+        created_at: 'desc' // Most recent first
+      }
+    });
+
+    return res.status(200).json({
+      drawings: drawings.map(drawing => ({
+        id: drawing.id,
+        drawingUrl: drawing.url,
+        feedback: drawing.feedback,
+        referenceId: drawing.reference_id,
+        originalImageUrl: drawing.reference.url,
+        shapeImageUrl: drawing.reference.shape_url,
+        outlineImageUrl: drawing.reference.outline_url,
+        createdAt: drawing.created_at
+      }))
+    });
+  } catch (err) {
+    console.log("Gallery error: ", err);
+    return res.status(400).json({
+      error: "Error retrieving gallery",
+      details: err.message
+    });
+  }
+});
+
+// ----------------- AUTHENTICATION -----------------
+
 server.post("/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
