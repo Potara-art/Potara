@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "auth0_id" SET DATA TYPE TEXT;
