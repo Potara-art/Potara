@@ -7,14 +7,8 @@ import App from "./App";
 import Start from "./Start/Start.jsx";
 import SignUp from "./auth/sign-up.jsx";
 import LogIn from "./auth/log-in.jsx";
+import Gallery from "./profile/gallery.jsx";
 import "./index.css";
-
-import App from './App'
-import Start from './Start/Start.jsx'
-import SignUp from './auth/sign-up.jsx'
-import LogIn from './auth/log-in.jsx'
-import Gallery from './profile/gallery.jsx'
-import './index.css'
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -26,7 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/sign-up" element={<SignUp />} />
           <Route path="/log-in" element={<LogIn />} />
           <Route path="/gallery" element={<Gallery />} />
-      </Routes>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>

@@ -1,7 +1,7 @@
 import Header from '../components/Header'
 import React, { useState, useRef, useEffect } from 'react';
 import Footer from '../components/Footer'
-import Canvas from './canvas.jsx' // <-- Capitalize to match the file on case-sensitive systems
+import Canvas from './canvas.jsx'
 
 import uploadImage from '../assets/uploadImage.svg'
 import spark from '../assets/Spark.svg'
