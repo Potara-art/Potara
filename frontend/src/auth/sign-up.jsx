@@ -1,4 +1,4 @@
-import testBg from '../assets/testBg.svg'
+import testBg from '../assets/testBg.png'
 import logo from '../assets/potara-logo.png'
 
 function SignUp() 
