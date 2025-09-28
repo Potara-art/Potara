@@ -16,9 +16,9 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  auth0_id  String   @unique
+  username  String
   email     String   @unique
-  name      String?
+  password_hash String
   references Reference[]
   drawings Drawing[]
   created_at DateTime @default(now())

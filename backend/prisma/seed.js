@@ -4,12 +4,12 @@ const prisma = new PrismaClient();
 /* ----------  USER  ---------- */
 const User = [
   /* Patients */
-  { email: "a@test.com", name: "Alice", auth0_id: "auth0|test-alice" },
-  { email: "jane.doe@test.com", name: "Jane", auth0_id: "auth0|test-jane" },
-  { email: "bart.joe@test.com", name: "Bart", auth0_id: "auth0|test-bart" },
-  { email: "johnny.test@example.com", name: "Johnny", auth0_id: "auth0|test-johnny" },
-  { email: "david.duncan@example.com", name: "David", auth0_id: "auth0|test-david" },
-  { email: "Larry.foster@example.com", name: "Larry", auth0_id: "auth0|test-larry" }
+  { email: "a@test.com", username: "Alice", password_hash: "123r"},
+  { email: "jane.doe@test.com", username: "Jane", password_hash: "lol"  },
+  { email: "bart.joe@test.com", username: "Bart", password_hash: "ahi" },
+  { email: "johnny.test@example.com", username: "Johnny", password_hash: "whadtup" },
+  { email: "david.duncan@example.com", username: "David", password_hash: "AAAA" },
+  { email: "Larry.foster@example.com", username: "Larry", password_hash: "whatsdfasdf" }
 ];
 
 async function main() {
