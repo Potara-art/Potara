@@ -618,8 +618,15 @@ server.get("/auth/me", async (req, res) => {
 
 // hello world test endpoint
 server.get("/", async (req, res) => {
-  const timestamp = Date.now();
-  return res.status(200).json({message: `Hello, it is currently ${timestamp}`});
+  const timestamp = new Date().toLocaleString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });  return res.status(200).json({message: `Hello, it is currently ${timestamp}`});
 });
 
 module.exports = server;
