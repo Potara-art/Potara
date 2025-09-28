@@ -6,17 +6,21 @@ import star from './assets/star.png'
 import swirl from './assets/swirl.png'
 import heart from './assets/heart.png'
 import squiggle from './assets/Squiggle.svg'
+import Header from './components/Header'
 
 function App() 
 {
   const navigate = useNavigate()
 
   return (
-    <div className="relative h-screen overflow-hidden flex flex-col items-center justify-start pt-36">
+    <>
+    <div className="relative h-screen overflow-hidden">
+      <Header></Header>
+      <div className='flex flex-col items-center justify-start pt-36'>
 
       {/* Foreground content */}
       <div className="relative z-10 flex flex-col items-center">
-        <h2 className="text-black text-4xl">
+        <h2 className="almost-black text-4xl">
           Welcome to
         </h2>
 
@@ -41,11 +45,11 @@ function App()
         <img
           src={heart}
           alt="Heart"
-          className="absolute bottom-[44px] -right-16 w-24 h-24 animate-tilt-snap-2"
+          className="absolute bottom-[44px] -right-25 w-24 h-24 animate-tilt-snap-2"
         />
 
-        <h1 className="text-black text-4xl mb-6">
-          Make Drawing Simple.
+        <h1 className="almost-black tracking-widest text-4xl mb-6">
+          Make drawing <a className='tracking-[6px]'>simple</a>.
         </h1>
 
         <img
@@ -70,6 +74,8 @@ function App()
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[100%] z-0"
       />
     </div>
+    </div>
+    </>
   )
 }
 
