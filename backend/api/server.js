@@ -1,11 +1,17 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const { GoogleGenAI } = require("@google/genai");
 const { PrismaClient } = require("../generated/prisma");
 const Minio = require("minio");
-const { generateToken, hashPassword, verifyPassword } = require("../utils/auth");
+const {
+  generateToken,
+  hashPassword,
+  verifyPassword,
+  verifyToken
+} = require("../utils/auth");
 
 const server = express();
 const prisma = new PrismaClient({
@@ -19,9 +25,10 @@ const prisma = new PrismaClient({
 server.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL || "http://localhost:3000"
+    origin: process.env.FRONTEND_URL || "http://localhost:5173"
   })
 );
+server.use(cookieParser());
 server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
@@ -256,9 +263,7 @@ server.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "Email and password are required" });
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const user = await prisma.user.findUnique({
@@ -272,17 +277,13 @@ server.post("/api/auth/login", async (req, res) => {
     });
 
     if (!user) {
-      return res
-        .status(401)
-        .json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const isValidPassword = await verifyPassword(user.password_hash, password);
 
     if (!isValidPassword) {
-      return res
-        .status(401)
-        .json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const token = generateToken(user.id);
@@ -319,6 +320,38 @@ server.post("/api/auth/logout", (_, res) => {
     success: true,
     message: "Logout successful"
   });
+});
+
+server.get("/api/auth/me", async (req, res) => {
+  try {
+    const token = req.cookies.auth_token;
+
+    if (!token) {
+      return res.status(401).json({ error: "No authentication token" });
+    }
+
+    const decoded = verifyToken(token);
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error("Auth verification error:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
 });
 
 server.get("/", (_, res) => {
