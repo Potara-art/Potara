@@ -1,8 +1,45 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext.jsx'
 import testBg from '../assets/testBg.png'
 import logo from '../assets/potara-logo.png'
 
-function SignUp() 
-{
+function SignUp() {
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [retypePassword, setRetypePassword] = useState('')
+  const [error, setError] = useState('')
+  const { register, loading } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (!username || !email || !password || !retypePassword) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    if (password !== retypePassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
+    try {
+      await register(username, email, password)
+      navigate('/start')
+    } catch (error) {
+      setError(error.message)
+    }
+  }
+
   return (
     <main
       className="relative min-h-screen flex items-center justify-center bg-no-repeat bg-cover bg-center"
@@ -27,7 +64,13 @@ function SignUp()
           Create your Account
         </h1>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-2xl">
+              {error}
+            </div>
+          )}
+
           <div>
             <label htmlFor="username" className="block text-sm almost-black mb-1">
               Username
@@ -35,8 +78,11 @@ function SignUp()
             <input
               id="username"
               type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter Username"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
@@ -47,8 +93,11 @@ function SignUp()
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="create@potara.art"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
@@ -59,8 +108,11 @@ function SignUp()
             <input
               id="password"
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
@@ -71,16 +123,20 @@ function SignUp()
             <input
               id="retype-password"
               type="password"
+              value={retypePassword}
+              onChange={(e) => setRetypePassword(e.target.value)}
               placeholder="••••••••"
               className="w-full rounded-2xl border border-gray-300 bg-white text-black px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#EB9191]"
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl py-3 rounded-2xl shadow-md transition"
+            disabled={loading}
+            className="w-full bg-[#EB9191] hover:bg-[#d97c7c] text-white font-unkempt text-xl py-3 rounded-2xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign Up
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
