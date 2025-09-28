@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import logo from '../assets/potara-logo.png'
 
-function Header() {
+function Header() 
+{
   const navigate = useNavigate()   // <-- you need this line
 
   return (
