@@ -245,7 +245,7 @@ server.post("/upload_img", upload.single("image"), async (req, res) => {
   
 });
 
-server.post("/api/auth/register", async (req, res) => {
+server.post("/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -304,7 +304,7 @@ server.post("/api/auth/register", async (req, res) => {
   }
 });
 
-server.post("/api/auth/login", async (req, res) => {
+server.post("/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -355,7 +355,7 @@ server.post("/api/auth/login", async (req, res) => {
   }
 });
 
-server.post("/api/auth/logout", (_, res) => {
+server.post("/auth/logout", (_, res) => {
   res.clearCookie("auth_token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -368,7 +368,7 @@ server.post("/api/auth/logout", (_, res) => {
   });
 });
 
-server.get("/api/auth/me", async (req, res) => {
+server.get("/auth/me", async (req, res) => {
   try {
     const token = req.cookies.auth_token;
 
