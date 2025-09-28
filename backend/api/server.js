@@ -616,4 +616,10 @@ server.get("/auth/me", async (req, res) => {
   }
 });
 
+// hello world test endpoint
+server.get("/", async (req, res) => {
+  const timestamp = Date.now();
+  return res.status(200).json({message: `Hello, it is currently ${timestamp}`});
+});
+
 module.exports = server;
